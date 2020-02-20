@@ -50,6 +50,10 @@ fetchViewportSize =
 
 view : Model -> Html Msg
 view model =
+    let
+        camera =
+            lookAt (V3.vec3 0.0 0.0 -5.0) (V3.vec3 0.0 0.0 0.0) (V3.vec3 0.0 1.0 0.0)
+    in
     WebGL.toHtmlWith
         [ WebGL.antialias
         ]
@@ -63,6 +67,11 @@ view model =
             quadMesh
             { resolution = V2.vec2 model.viewportWidth model.viewportHeight
             , playTime = model.playTime
+            , eye = camera.eye
+            , forward = camera.forward
+            , right = camera.right
+            , up = camera.up
+            , focalLength = camera.focalLength
             }
         ]
 
@@ -89,6 +98,30 @@ subscriptions _ =
         ]
 
 
+type alias Camera =
+    { eye : Vec3
+    , forward : Vec3
+    , right : Vec3
+    , up : Vec3
+    , focalLength : Float
+    }
+
+
+lookAt : Vec3 -> Vec3 -> Vec3 -> Camera
+lookAt eye at upDir =
+    let
+        forward =
+            V3.sub at eye |> V3.normalize
+
+        right =
+            V3.cross forward upDir |> V3.normalize
+
+        up =
+            V3.cross right forward
+    in
+    { eye = eye, forward = forward, right = right, up = up, focalLength = 0.3 }
+
+
 type alias Vertex =
     { position : Vec3
     }
@@ -97,6 +130,11 @@ type alias Vertex =
 type alias Uniforms =
     { resolution : Vec2
     , playTime : Float
+    , eye : Vec3
+    , forward : Vec3
+    , right : Vec3
+    , up : Vec3
+    , focalLength : Float
     }
 
 
@@ -113,6 +151,8 @@ quadMesh =
 quadVertexShader : Shader Vertex Uniforms {}
 quadVertexShader =
     [glsl|
+
+precision highp float;
 
 attribute vec3 position;
 
@@ -133,6 +173,30 @@ precision highp float;
 uniform vec2 resolution;
 uniform float playTime;
 
+uniform vec3 eye;
+uniform vec3 forward;
+uniform vec3 right;
+uniform vec3 up;
+uniform float focalLength;
+
+struct Ray {
+    vec3 origin;
+    vec3 direction;
+};
+
+Ray makeRay(vec3 origin, vec3 direction)
+{
+    return Ray(origin, normalize(direction));
+}
+
+Ray primaryRay(vec2 uv)
+{
+    vec3 center = eye + forward * focalLength;
+    vec3 spot = center + right * uv.x + up * uv.y;
+
+    return makeRay(eye, spot - eye);
+}
+
 vec2 normalizedUV()
 {
     return (gl_FragCoord.xy - 0.5 * resolution) / min(resolution.x, resolution.y);
@@ -140,8 +204,13 @@ vec2 normalizedUV()
 
 void main()
 {
-    vec2 uv = fract(normalizedUV() * 10.0);
-    gl_FragColor = vec4(uv.x, uv.y, 0.0, 1.0);
+    //vec2 uv = fract(normalizedUV() * 10.0);
+    vec2 uv = normalizedUV();
+
+    Ray ray = primaryRay(uv);
+
+    //gl_FragColor = vec4(uv.x, uv.y, 0.0, 1.0);
+    gl_FragColor = vec4(ray.direction, 1.0);
 }
 
     |]
