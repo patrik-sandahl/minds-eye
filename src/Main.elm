@@ -189,6 +189,11 @@ Ray makeRay(vec3 origin, vec3 direction)
     return Ray(origin, normalize(direction));
 }
 
+vec3 makePoint(Ray ray, float d)
+{
+    return ray.origin + ray.direction * d;
+}
+
 Ray primaryRay(vec2 uv)
 {
     vec3 center = eye + forward * focalLength;
@@ -202,15 +207,43 @@ vec2 normalizedUV()
     return (gl_FragCoord.xy - 0.5 * resolution) / min(resolution.x, resolution.y);
 }
 
+float sphere(vec3 pos, float radius)
+{
+    return length(pos) - radius;
+}
+
+float intersectScene(vec3 p)
+{
+    return sphere(p - vec3(0.0), 1.0);
+}
+
+float rayMarch(Ray ray)
+{
+    float d0 = 0.0;
+    for (int i = 0; i < 100; ++i) {
+        vec3 p = makePoint(ray, d0);
+        float d = intersectScene(p);
+
+        d0 += d;
+        if (d < 0.001 || d0 > 10.0) break;
+    }
+
+    return d0;
+}
+
 void main()
 {
     //vec2 uv = fract(normalizedUV() * 10.0);
     vec2 uv = normalizedUV();
-
     Ray ray = primaryRay(uv);
 
+    float d = rayMarch(ray);
+    vec3 color = d < 10.0 ? vec3(1.0) : vec3(0.0);
+
+    gl_FragColor = vec4(color, 1.0);
+
     //gl_FragColor = vec4(uv.x, uv.y, 0.0, 1.0);
-    gl_FragColor = vec4(ray.direction, 1.0);
+    //gl_FragColor = vec4(ray.direction, 1.0);
 }
 
     |]
