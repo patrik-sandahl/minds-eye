@@ -14,6 +14,7 @@ import WebGL exposing (Mesh, Shader)
 type alias Model =
     { viewportWidth : Float
     , viewportHeight : Float
+    , latestFrameTime : Float
     , playTime : Float
     }
 
@@ -37,6 +38,7 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     ( { viewportWidth = 0.0
       , viewportHeight = 0.0
+      , latestFrameTime = 0.0
       , playTime = 0.0
       }
     , fetchViewportSize
@@ -54,27 +56,30 @@ view model =
         camera =
             lookAt (V3.vec3 0.0 0.0 -5.0) (V3.vec3 0.0 0.0 0.0) (V3.vec3 0.0 1.0 0.0)
     in
-    WebGL.toHtmlWith
-        [ WebGL.antialias
-        ]
-        [ floor model.viewportWidth |> HtmlAttributes.width
-        , floor model.viewportHeight |> HtmlAttributes.height
-        , HtmlAttributes.style "display" "block"
-        ]
-        [ WebGL.entity
-            quadVertexShader
-            playgroundFragmentShader
-            quadMesh
-            { resolution = V2.vec2 model.viewportWidth model.viewportHeight
-            , playTime = model.playTime
-            , eye = camera.eye
-            , forward = camera.forward
-            , right = camera.right
-            , up = camera.up
-            , focalLength = camera.focalLength
-            }
-        ]
-
+        Html.div
+            []
+            [ viewHud model
+            , WebGL.toHtmlWith
+                [ WebGL.antialias
+                ]
+                [ floor model.viewportWidth |> HtmlAttributes.width
+                , floor model.viewportHeight |> HtmlAttributes.height
+                , HtmlAttributes.style "display" "block"
+                ]
+                [ WebGL.entity
+                    quadVertexShader
+                    playgroundFragmentShader
+                    quadMesh
+                    { resolution = V2.vec2 model.viewportWidth model.viewportHeight
+                    , playTime = model.playTime
+                    , eye = camera.eye
+                    , forward = camera.forward
+                    , right = camera.right
+                    , up = camera.up
+                    , focalLength = camera.focalLength
+                    }
+                ]
+            ]
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -85,7 +90,7 @@ update msg model =
             )
 
         AnimateFrame delta ->
-            ( { model | playTime = model.playTime + delta }
+            ( { model | latestFrameTime = delta, playTime = model.playTime + delta }
             , Cmd.none
             )
 
@@ -97,6 +102,28 @@ subscriptions _ =
         , BrowserEvents.onAnimationFrameDelta AnimateFrame
         ]
 
+calcFps : Float -> Float
+calcFps latestFrameTime =
+    if latestFrameTime /= 0.0 then
+        1000.0 / latestFrameTime
+        else 0.0
+
+viewHud : Model -> Html Msg
+viewHud model =
+    Html.div
+        [ HtmlAttributes.style "display" "inline-block"
+        , HtmlAttributes.style "position" "fixed"
+        , HtmlAttributes.style "left" "10px"
+        , HtmlAttributes.style "top" "10px"
+        , HtmlAttributes.style "font-family" "sans-serif"
+        , HtmlAttributes.style "font-size" "16px"
+        , HtmlAttributes.style "color" "white"
+        , HtmlAttributes.style "z-index" "1"                        
+        ]
+        [ let res = String.fromFloat model.viewportWidth ++ "x" ++ String.fromFloat model.viewportHeight ++ "px"
+              fps = String.fromInt (calcFps model.latestFrameTime |> round) ++ " FPS"
+          in res ++ " " ++ fps |> Html.text
+        ]
 
 type alias Camera =
     { eye : Vec3
@@ -238,7 +265,7 @@ void main()
     Ray ray = primaryRay(uv);
 
     float d = rayMarch(ray);
-    vec3 color = d < 10.0 ? vec3(1.0) : vec3(0.0);
+    vec3 color = d < 10.0 ? vec3(1.0) : vec3(0.3);
 
     gl_FragColor = vec4(color, 1.0);
 
