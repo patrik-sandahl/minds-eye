@@ -87,6 +87,8 @@ view model =
                 quadMesh
                 { resolution = V2.vec2 model.viewportWidth model.viewportHeight
                 , playTime = model.playTime
+                , planetOrigo = V3.vec3 0.0 0.0 0.0
+                , planetRadius = 1.0
                 , eye = camera.eye
                 , forward = camera.forward
                 , right = camera.right
@@ -236,6 +238,8 @@ type alias Vertex =
 type alias Uniforms =
     { resolution : Vec2
     , playTime : Float
+    , planetOrigo : Vec3
+    , planetRadius : Float
     , eye : Vec3
     , forward : Vec3
     , right : Vec3
@@ -279,6 +283,9 @@ precision highp float;
 uniform vec2 resolution;
 uniform float playTime;
 
+uniform vec3 planetOrigo;
+uniform float planetRadius;
+
 uniform vec3 eye;
 uniform vec3 forward;
 uniform vec3 right;
@@ -319,8 +326,8 @@ float sphere(vec3 pos, float radius)
 }
 
 float intersectScene(vec3 p)
-{
-    return sphere(p - vec3(0.0), 1.0);
+{    
+    return sphere(p - planetOrigo, planetRadius);
 }
 
 float rayMarch(Ray ray)
@@ -344,7 +351,16 @@ void main()
     Ray ray = primaryRay(uv);
 
     float d = rayMarch(ray);
-    vec3 color = d < 10.0 ? vec3(1.0) : vec3(0.3);
+
+    vec3 color = vec3(0.3);
+    if (d < 10.0) {        
+        vec3 p = makePoint(ray, d);
+        vec3 dir = p - planetOrigo;
+        float u = (dir.x / length(dir) + 1.0) * 0.5;
+        float v = (dir.y / length(dir) + 1.0) * 0.5;
+
+        color = vec3(u, v, 0.0);
+    }    
 
     gl_FragColor = vec4(color, 1.0);
 
