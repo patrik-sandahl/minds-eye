@@ -5,24 +5,38 @@ import Browser.Dom as Dom
 import Browser.Events as BrowserEvents
 import Html exposing (Html)
 import Html.Attributes as HtmlAttributes
+import Json.Decode as Decode
 import Math.Vector2 as V2 exposing (Vec2)
 import Math.Vector3 as V3 exposing (Vec3)
 import Task
 import WebGL exposing (Mesh, Shader)
 
+type DragState 
+    = Static
+    | Dragging
 
 type alias Model =
     { viewportWidth : Float
     , viewportHeight : Float
     , latestFrameTimes : List Float
     , playTime : Float
+    , dragState : DragState
     }
 
+
+type MouseButton
+    = Left
+    | Mid
+    | Right
+    | Any
 
 type Msg
     = ResizeViewport Float Float
     | AnimateFrame Float
-
+    | MouseDown MouseButton Float Float
+    | MouseMoveTo Float Float
+    | MouseUp MouseButton
+    | Ignore
 
 main : Program () Model Msg
 main =
@@ -40,6 +54,7 @@ init _ =
       , viewportHeight = 0.0
       , latestFrameTimes = []
       , playTime = 0.0
+      , dragState = Static
       }
     , fetchViewportSize
     )
@@ -95,14 +110,59 @@ update msg model =
             , Cmd.none
             )
 
+        MouseDown button pageX pageY ->
+            let dbg = Debug.log ("Down: x=" ++ String.fromFloat pageX ++ ", y=" ++ String.fromFloat pageY) 0
+            in ( { model | dragState = Dragging }
+            , Cmd.none
+            )
+
+        MouseMoveTo pageX pageY ->
+            let dbg = Debug.log ("MoveTo: x=" ++ String.fromFloat pageX ++ ", y=" ++ String.fromFloat pageY) 0
+            in ( model
+            , Cmd.none
+            )
+
+        MouseUp button ->
+            let dbg = Debug.log "Up" 0
+            in ( { model | dragState = Static}
+            , Cmd.none
+            )
+
+        Ignore ->
+            ( model
+            , Cmd.none
+            )
+
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Sub.batch
-        [ BrowserEvents.onResize (\w h -> ResizeViewport (toFloat w) (toFloat h))
-        , BrowserEvents.onAnimationFrameDelta AnimateFrame
-        ]
+subscriptions model =
+    let staticEvents = 
+            [ BrowserEvents.onResize (\w h -> ResizeViewport (toFloat w) (toFloat h))
+            , BrowserEvents.onAnimationFrameDelta AnimateFrame
+            , BrowserEvents.onMouseDown (Decode.map3 MouseDown decodeMouseButton decodeMouseXPos decodeMouseYPos)
+            , BrowserEvents.onMouseUp (Decode.map MouseUp decodeMouseButton)
+            , BrowserEvents.onVisibilityChange (\v -> if v == BrowserEvents.Hidden then MouseUp Any else Ignore)
+            ]
+    in case model.dragState of
+        Static -> Sub.batch staticEvents
+        Dragging -> BrowserEvents.onMouseMove (Decode.map2 MouseMoveTo decodeMouseYPos decodeMouseXPos) :: staticEvents |> Sub.batch
 
+decodeMouseButton : Decode.Decoder MouseButton
+decodeMouseButton =
+    Decode.map (\v ->
+        case v of
+            0 -> Left
+            1 -> Mid
+            _ -> Right
+    ) (Decode.field "button" Decode.int)
+
+decodeMouseXPos : Decode.Decoder Float
+decodeMouseXPos =
+    Decode.field "pageX" Decode.float
+
+decodeMouseYPos : Decode.Decoder Float
+decodeMouseYPos =
+    Decode.field "pageY" Decode.float
 
 calcFps : List Float -> Float
 calcFps latestFrameTimes =
