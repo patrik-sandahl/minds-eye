@@ -8,19 +8,22 @@ import Html.Attributes as HtmlAttributes
 import Json.Decode as Decode
 import Math.Vector2 as V2 exposing (Vec2)
 import Math.Vector3 as V3 exposing (Vec3)
+import Navigator exposing (Navigator)
 import Task
 import WebGL exposing (Mesh, Shader)
 
-type DragState 
+
+type DragState
     = Static
     | Dragging
 
+
 type alias Model =
-    { viewportWidth : Float
-    , viewportHeight : Float
+    { resolution : Vec2
     , latestFrameTimes : List Float
     , playTime : Float
     , dragState : DragState
+    , navigator : Navigator
     }
 
 
@@ -30,13 +33,15 @@ type MouseButton
     | Right
     | Any
 
+
 type Msg
-    = ResizeViewport Float Float
+    = ChangeResolution Vec2
     | AnimateFrame Float
     | MouseDown MouseButton Float Float
     | MouseMoveTo Float Float
     | MouseUp MouseButton
     | Ignore
+
 
 main : Program () Model Msg
 main =
@@ -50,50 +55,50 @@ main =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { viewportWidth = 0.0
-      , viewportHeight = 0.0
+    ( { resolution = V2.vec2 0.0 0.0
       , latestFrameTimes = []
       , playTime = 0.0
       , dragState = Static
+      , navigator = Navigator.init
       }
-    , fetchViewportSize
+    , fetchResolution
     )
 
 
-fetchViewportSize : Cmd Msg
-fetchViewportSize =
-    Task.perform (\viewport -> ResizeViewport viewport.viewport.width viewport.viewport.height) Dom.getViewport
+fetchResolution : Cmd Msg
+fetchResolution =
+    Task.perform
+        (\viewport ->
+            ChangeResolution <| V2.vec2 viewport.viewport.width viewport.viewport.height
+        )
+        Dom.getViewport
 
 
 view : Model -> Html Msg
 view model =
-    let
-        camera =
-            lookAt (V3.vec3 0.0 0.0 -5.0) (V3.vec3 0.0 0.0 0.0) (V3.vec3 0.0 1.0 0.0)
-    in
     Html.div
         []
         [ viewHud model
         , WebGL.toHtmlWith
             [ WebGL.antialias
             ]
-            [ floor model.viewportWidth |> HtmlAttributes.width
-            , floor model.viewportHeight |> HtmlAttributes.height
+            [ V2.getX model.resolution |> HtmlAttributes.width << floor
+            , V2.getY model.resolution |> HtmlAttributes.height << floor
             , HtmlAttributes.style "display" "block"
             ]
             [ WebGL.entity
                 quadVertexShader
                 playgroundFragmentShader
                 quadMesh
-                { resolution = V2.vec2 model.viewportWidth model.viewportHeight
+                { resolution = model.resolution
                 , playTime = model.playTime
                 , planetOrigo = V3.vec3 0.0 0.0 0.0
                 , planetRadius = 1.0
-                , eye = camera.eye
-                , forward = camera.forward
-                , right = camera.right
-                , up = camera.up
-                , focalLength = camera.focalLength
+                , cameraEye = Navigator.cameraEye model.navigator
+                , cameraForward = Navigator.cameraForward model.navigator
+                , cameraRight = Navigator.cameraRight model.navigator
+                , cameraUp = Navigator.cameraUp model.navigator
+                , cameraFocalLength = Navigator.cameraFocalLength model.navigator
                 }
             ]
         ]
@@ -102,8 +107,11 @@ view model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ResizeViewport w h ->
-            ( { model | viewportWidth = w, viewportHeight = h }
+        ChangeResolution resolution ->
+            ( { model
+                | resolution = resolution
+                , navigator = Navigator.changeResolution resolution model.navigator
+              }
             , Cmd.none
             )
 
@@ -113,20 +121,29 @@ update msg model =
             )
 
         MouseDown button pageX pageY ->
-            let dbg = Debug.log ("Down: x=" ++ String.fromFloat pageX ++ ", y=" ++ String.fromFloat pageY) 0
-            in ( { model | dragState = Dragging }
+            let
+                dbg =
+                    Debug.log ("Down: x=" ++ String.fromFloat pageX ++ ", y=" ++ String.fromFloat pageY) 0
+            in
+            ( { model | dragState = Dragging }
             , Cmd.none
             )
 
         MouseMoveTo pageX pageY ->
-            let dbg = Debug.log ("MoveTo: x=" ++ String.fromFloat pageX ++ ", y=" ++ String.fromFloat pageY) 0
-            in ( model
+            let
+                dbg =
+                    Debug.log ("MoveTo: x=" ++ String.fromFloat pageX ++ ", y=" ++ String.fromFloat pageY) 0
+            in
+            ( model
             , Cmd.none
             )
 
         MouseUp button ->
-            let dbg = Debug.log "Up" 0
-            in ( { model | dragState = Static}
+            let
+                dbg =
+                    Debug.log "Up" 0
+            in
+            ( { model | dragState = Static }
             , Cmd.none
             )
 
@@ -138,33 +155,56 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    let staticEvents = 
-            [ BrowserEvents.onResize (\w h -> ResizeViewport (toFloat w) (toFloat h))
+    let
+        staticEvents =
+            [ BrowserEvents.onResize (\w h -> ChangeResolution <| V2.vec2 (toFloat w) (toFloat h))
             , BrowserEvents.onAnimationFrameDelta AnimateFrame
             , BrowserEvents.onMouseDown (Decode.map3 MouseDown decodeMouseButton decodeMouseXPos decodeMouseYPos)
             , BrowserEvents.onMouseUp (Decode.map MouseUp decodeMouseButton)
-            , BrowserEvents.onVisibilityChange (\v -> if v == BrowserEvents.Hidden then MouseUp Any else Ignore)
+            , BrowserEvents.onVisibilityChange
+                (\v ->
+                    if v == BrowserEvents.Hidden then
+                        MouseUp Any
+
+                    else
+                        Ignore
+                )
             ]
-    in case model.dragState of
-        Static -> Sub.batch staticEvents
-        Dragging -> BrowserEvents.onMouseMove (Decode.map2 MouseMoveTo decodeMouseYPos decodeMouseXPos) :: staticEvents |> Sub.batch
+    in
+    case model.dragState of
+        Static ->
+            Sub.batch staticEvents
+
+        Dragging ->
+            BrowserEvents.onMouseMove (Decode.map2 MouseMoveTo decodeMouseYPos decodeMouseXPos) :: staticEvents |> Sub.batch
+
 
 decodeMouseButton : Decode.Decoder MouseButton
 decodeMouseButton =
-    Decode.map (\v ->
-        case v of
-            0 -> Left
-            1 -> Mid
-            _ -> Right
-    ) (Decode.field "button" Decode.int)
+    Decode.map
+        (\v ->
+            case v of
+                0 ->
+                    Left
+
+                1 ->
+                    Mid
+
+                _ ->
+                    Right
+        )
+        (Decode.field "button" Decode.int)
+
 
 decodeMouseXPos : Decode.Decoder Float
 decodeMouseXPos =
     Decode.field "pageX" Decode.float
 
+
 decodeMouseYPos : Decode.Decoder Float
 decodeMouseYPos =
     Decode.field "pageY" Decode.float
+
 
 calcFps : List Float -> Float
 calcFps latestFrameTimes =
@@ -197,37 +237,13 @@ viewHud model =
         ]
         [ let
             res =
-                String.fromFloat model.viewportWidth ++ "x" ++ String.fromFloat model.viewportHeight ++ "px"
+                String.fromFloat (V2.getX model.resolution) ++ "x" ++ String.fromFloat (V2.getY model.resolution) ++ "px"
 
             fps =
                 String.fromInt (calcFps model.latestFrameTimes |> round) ++ " FPS"
           in
           res ++ " " ++ fps |> Html.text
         ]
-
-
-type alias Camera =
-    { eye : Vec3
-    , forward : Vec3
-    , right : Vec3
-    , up : Vec3
-    , focalLength : Float
-    }
-
-
-lookAt : Vec3 -> Vec3 -> Vec3 -> Camera
-lookAt eye at upDir =
-    let
-        forward =
-            V3.sub at eye |> V3.normalize
-
-        right =
-            V3.cross forward upDir |> V3.normalize
-
-        up =
-            V3.cross right forward
-    in
-    { eye = eye, forward = forward, right = right, up = up, focalLength = 0.3 }
 
 
 type alias Vertex =
@@ -240,11 +256,11 @@ type alias Uniforms =
     , playTime : Float
     , planetOrigo : Vec3
     , planetRadius : Float
-    , eye : Vec3
-    , forward : Vec3
-    , right : Vec3
-    , up : Vec3
-    , focalLength : Float
+    , cameraEye : Vec3
+    , cameraForward : Vec3
+    , cameraRight : Vec3
+    , cameraUp : Vec3
+    , cameraFocalLength : Float
     }
 
 
@@ -286,11 +302,11 @@ uniform float playTime;
 uniform vec3 planetOrigo;
 uniform float planetRadius;
 
-uniform vec3 eye;
-uniform vec3 forward;
-uniform vec3 right;
-uniform vec3 up;
-uniform float focalLength;
+uniform vec3 cameraEye;
+uniform vec3 cameraForward;
+uniform vec3 cameraRight;
+uniform vec3 cameraUp;
+uniform float cameraFocalLength;
 
 struct Ray {
     vec3 origin;
@@ -309,10 +325,10 @@ vec3 makePoint(Ray ray, float d)
 
 Ray primaryRay(vec2 uv)
 {
-    vec3 center = eye + forward * focalLength;
-    vec3 spot = center + right * uv.x + up * uv.y;
+    vec3 center = cameraEye + cameraForward * cameraFocalLength;
+    vec3 spot = center + cameraRight * uv.x + cameraUp * uv.y;
 
-    return makeRay(eye, spot - eye);
+    return makeRay(cameraEye, spot - cameraEye);
 }
 
 vec2 normalizedUV()
