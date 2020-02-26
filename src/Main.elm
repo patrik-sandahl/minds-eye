@@ -8,7 +8,7 @@ import Html.Attributes as HtmlAttributes
 import Json.Decode as Decode
 import Math.Vector2 as V2 exposing (Vec2)
 import Math.Vector3 as V3 exposing (Vec3)
-import Navigator exposing (Navigator)
+import Navigator exposing (NavigationState(..), Navigator, OrbitState)
 import Task
 import WebGL exposing (Mesh, Shader)
 
@@ -24,6 +24,7 @@ type alias Model =
     , playTime : Float
     , dragState : DragState
     , navigator : Navigator
+    , quadMesh : Mesh Vertex
     }
 
 
@@ -59,7 +60,17 @@ init _ =
       , latestFrameTimes = []
       , playTime = 0.0
       , dragState = Static
-      , navigator = Navigator.init
+      , navigator =
+            Navigator.init
+                (Orbit
+                    { origo = V3.vec3 0.0 0.0 0.0
+                    , height = 5.0
+                    , azimuth = 0.0
+                    , elevation = 0.0
+                    }
+                )
+                (V2.vec2 0.0 0.0)
+      , quadMesh = makeQuadMesh
       }
     , fetchResolution
     )
@@ -89,7 +100,7 @@ view model =
             [ WebGL.entity
                 quadVertexShader
                 playgroundFragmentShader
-                quadMesh
+                model.quadMesh
                 { resolution = model.resolution
                 , playTime = model.playTime
                 , planetOrigo = V3.vec3 0.0 0.0 0.0
@@ -264,8 +275,8 @@ type alias Uniforms =
     }
 
 
-quadMesh : Mesh Vertex
-quadMesh =
+makeQuadMesh : Mesh Vertex
+makeQuadMesh =
     WebGL.triangleStrip
         [ Vertex (V3.vec3 -1.0 1.0 0.0)
         , Vertex (V3.vec3 -1.0 -1.0 0.0)
@@ -342,7 +353,7 @@ float sphere(vec3 pos, float radius)
 }
 
 float intersectScene(vec3 p)
-{    
+{
     return sphere(p - planetOrigo, planetRadius);
 }
 
@@ -369,14 +380,14 @@ void main()
     float d = rayMarch(ray);
 
     vec3 color = vec3(0.3);
-    if (d < 10.0) {        
+    if (d < 10.0) {
         vec3 p = makePoint(ray, d);
         vec3 dir = p - planetOrigo;
         float u = (dir.x / length(dir) + 1.0) * 0.5;
         float v = (dir.y / length(dir) + 1.0) * 0.5;
 
         color = vec3(u, v, 0.0);
-    }    
+    }
 
     gl_FragColor = vec4(color, 1.0);
 

@@ -1,6 +1,8 @@
 module Navigator exposing
     ( Camera
+    , NavigationState(..)
     , Navigator
+    , OrbitState
     , cameraEye
     , cameraFocalLength
     , cameraForward
@@ -10,6 +12,7 @@ module Navigator exposing
     , init
     )
 
+import Math.Matrix4 as M44 exposing (Mat4)
 import Math.Vector2 as V2 exposing (Vec2)
 import Math.Vector3 as V3 exposing (Vec3)
 
@@ -17,7 +20,20 @@ import Math.Vector3 as V3 exposing (Vec3)
 type alias Navigator =
     { resolution : Vec2
     , camera : Camera
+    , state : NavigationState
     }
+
+
+type alias OrbitState =
+    { origo : Vec3
+    , height : Float
+    , azimuth : Float
+    , elevation : Float
+    }
+
+
+type NavigationState
+    = Orbit OrbitState
 
 
 type alias Camera =
@@ -29,11 +45,21 @@ type alias Camera =
     }
 
 
-init : Navigator
-init =
-    { resolution = V2.vec2 0.0 0.0
-    , camera = lookAt (V3.vec3 5.0 0.0 0.0) (V3.vec3 0.0 0.0 0.0) (V3.vec3 0.0 1.0 0.0) 1.0
-    }
+init : NavigationState -> Vec2 -> Navigator
+init initialState initialResolution =
+    case initialState of
+        Orbit state ->
+            let
+                ( eye, up ) =
+                    eyeAndUpFromOrbitState state
+
+                camera =
+                    lookAt eye state.origo up 1.0
+            in
+            { resolution = initialResolution
+            , camera = camera
+            , state = initialState
+            }
 
 
 changeResolution : Vec2 -> Navigator -> Navigator
@@ -64,6 +90,21 @@ cameraUp navigator =
 cameraFocalLength : Navigator -> Float
 cameraFocalLength navigator =
     navigator.camera.focalLength
+
+
+eyeAndUpFromOrbitState : OrbitState -> ( Vec3, Vec3 )
+eyeAndUpFromOrbitState state =
+    let
+        frontAxis =
+            V3.vec3 0.0 0.0 1.0
+
+        azimuthRot =
+            M44.makeRotate state.azimuth <| V3.vec3 0.0 1.0 0.0
+
+        rotFrontAxis =
+            M44.transform azimuthRot frontAxis
+    in
+    ( V3.scale state.height rotFrontAxis, V3.vec3 0.0 1.0 0.0 )
 
 
 lookAt : Vec3 -> Vec3 -> Vec3 -> Float -> Camera
