@@ -3,6 +3,7 @@ module Navigator exposing
     , NavigationState(..)
     , Navigator
     , OrbitState
+    , animate
     , cameraEye
     , cameraFocalLength
     , cameraForward
@@ -62,6 +63,23 @@ init initialState initialResolution =
             }
 
 
+animate : Float -> Navigator -> Navigator
+animate playTime navigator =
+    case navigator.state of
+        Orbit state ->
+            let
+                newState =
+                    { state | azimuth = playTime, elevation = playTime }
+
+                ( eye, up ) =
+                    eyeAndUpFromOrbitState newState
+
+                camera =
+                    lookAt eye newState.origo up navigator.camera.focalLength
+            in
+            { navigator | camera = camera, state = Orbit newState }
+
+
 changeResolution : Vec2 -> Navigator -> Navigator
 changeResolution resolution navigator =
     { navigator | resolution = resolution }
@@ -95,16 +113,53 @@ cameraFocalLength navigator =
 eyeAndUpFromOrbitState : OrbitState -> ( Vec3, Vec3 )
 eyeAndUpFromOrbitState state =
     let
-        frontAxis =
-            V3.vec3 0.0 0.0 1.0
-
-        azimuthRot =
-            M44.makeRotate state.azimuth <| V3.vec3 0.0 1.0 0.0
-
-        rotFrontAxis =
-            M44.transform azimuthRot frontAxis
+        ( xAxis, yAxis, zAxis ) =
+            bodyBasisMatrix
+                |> rotateMatrixBy state.azimuth state.elevation
+                |> getMatrixAxis
     in
-    ( V3.scale state.height rotFrontAxis, V3.vec3 0.0 1.0 0.0 )
+    ( V3.scale state.height zAxis, yAxis )
+
+
+bodyBasisMatrix : Mat4
+bodyBasisMatrix =
+    M44.makeBasis
+        (V3.vec3 1.0 0.0 0.0)
+        (V3.vec3 0.0 1.0 0.0)
+        (V3.vec3 0.0 0.0 1.0)
+
+
+getMatrixAxis : Mat4 -> ( Vec3, Vec3, Vec3 )
+getMatrixAxis mat =
+    let
+        r =
+            M44.toRecord mat
+
+        x =
+            V3.vec3 r.m11 r.m21 r.m31
+
+        y =
+            V3.vec3 r.m12 r.m22 r.m32
+
+        z =
+            V3.vec3 r.m13 r.m23 r.m33
+    in
+    ( x, y, z )
+
+
+rotateMatrixBy : Float -> Float -> Mat4 -> Mat4
+rotateMatrixBy azimuth elevation mat =
+    let
+        rotAzimuth =
+            M44.makeRotate azimuth <| V3.vec3 0.0 1.0 0.0
+
+        rotElevation =
+            M44.makeRotate elevation <| V3.vec3 1.0 0.0 0.0
+
+        rotMatrix =
+            M44.mul rotElevation rotAzimuth
+    in
+    M44.mul mat rotMatrix
 
 
 lookAt : Vec3 -> Vec3 -> Vec3 -> Float -> Camera

@@ -127,7 +127,15 @@ update msg model =
             )
 
         AnimateFrame delta ->
-            ( { model | latestFrameTimes = delta :: List.take 4 model.latestFrameTimes, playTime = model.playTime + delta }
+            ( let
+                playTime =
+                    Debug.log ("playTime=" ++ String.fromFloat (model.playTime + delta)) model.playTime + delta
+              in
+              { model
+                | latestFrameTimes = delta :: List.take 4 model.latestFrameTimes
+                , playTime = playTime
+                , navigator = Navigator.animate (playTime / 3000.0) model.navigator
+              }
             , Cmd.none
             )
 
@@ -386,7 +394,9 @@ void main()
         float u = (dir.x / length(dir) + 1.0) * 0.5;
         float v = (dir.y / length(dir) + 1.0) * 0.5;
 
-        color = vec3(u, v, 0.0);
+        if (u > 0.48 && u < 0.52) color = vec3(1.0);
+        else if (v > 0.48 && v < 0.52) color = vec3(0.0);
+        else color = vec3(u, v, 0.0);
     }
 
     gl_FragColor = vec4(color, 1.0);
