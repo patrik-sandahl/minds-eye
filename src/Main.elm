@@ -260,8 +260,19 @@ viewHud model =
 
             fps =
                 String.fromInt (calcFps model.latestFrameTimes |> round) ++ " FPS"
+
+            eye =
+                Navigator.cameraEye model.navigator
+
+            eyePos =
+                "Eye x="
+                    ++ (V3.getX eye |> String.fromFloat)
+                    ++ ", y="
+                    ++ (V3.getY eye |> String.fromFloat)
+                    ++ ", z="
+                    ++ (V3.getZ eye |> String.fromFloat)
           in
-          res ++ " " ++ fps |> Html.text
+          res ++ " " ++ fps ++ " " ++ eyePos |> Html.text
         ]
 
 
