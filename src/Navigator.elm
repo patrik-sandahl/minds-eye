@@ -22,6 +22,7 @@ type alias Navigator =
     { resolution : Vec2
     , camera : Camera
     , state : NavigationState
+    , mouseMove : Maybe Mouse
     }
 
 
@@ -35,6 +36,11 @@ type alias OrbitState =
 
 type NavigationState
     = Orbit OrbitState
+
+
+type alias Mouse =
+    { position : Vec2
+    }
 
 
 type alias Camera =
@@ -60,6 +66,7 @@ init initialState initialResolution =
             { resolution = initialResolution
             , camera = camera
             , state = initialState
+            , mouseMove = Nothing
             }
 
 
@@ -175,3 +182,25 @@ lookAt eye at upDir focalLength =
             V3.cross right forward
     in
     { eye = eye, forward = forward, right = right, up = up, focalLength = focalLength }
+
+
+relativeMouseMove : Vec2 -> Vec2 -> Vec2 -> Vec2
+relativeMouseMove from to resolution =
+    let
+        diffX =
+            V2.getX to - V2.getX from
+
+        diffY =
+            V2.getY to - V2.getY from
+
+        relX =
+            diffX / V2.getX resolution
+
+        relY =
+            diffY / V2.getY resolution
+    in
+    if isInfinite relX || isInfinite relY then
+        V2.vec2 0.0 0.0
+
+    else
+        V2.vec2 relX relY
