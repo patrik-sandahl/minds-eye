@@ -3,14 +3,17 @@ module Navigator exposing
     , NavigationState(..)
     , Navigator
     , OrbitState
-    , animate
+    , beginMouseMove
+    , beginMouseRotate
     , cameraEye
     , cameraFocalLength
     , cameraForward
     , cameraRight
     , cameraUp
     , changeResolution
+    , endAllMouseAction
     , init
+    , mouseTo
     )
 
 import Math.Matrix4 as M44 exposing (Mat4)
@@ -22,7 +25,7 @@ type alias Navigator =
     { resolution : Vec2
     , camera : Camera
     , state : NavigationState
-    , mouseMove : Maybe Mouse
+    , mouseAction : Maybe MouseAction
     }
 
 
@@ -38,9 +41,9 @@ type NavigationState
     = Orbit OrbitState
 
 
-type alias Mouse =
-    { position : Vec2
-    }
+type MouseAction
+    = Move Vec2
+    | Rotate Vec2
 
 
 type alias Camera =
@@ -66,17 +69,59 @@ init initialState initialResolution =
             { resolution = initialResolution
             , camera = camera
             , state = initialState
-            , mouseMove = Nothing
+            , mouseAction = Nothing
             }
 
 
-animate : Float -> Navigator -> Navigator
-animate playTime navigator =
+beginMouseMove : Vec2 -> Navigator -> Navigator
+beginMouseMove pos navigator =
+    { navigator | mouseAction = Just (Move pos) }
+
+
+beginMouseRotate : Vec2 -> Navigator -> Navigator
+beginMouseRotate pos navigator =
+    { navigator | mouseAction = Just (Rotate pos) }
+
+
+mouseTo : Vec2 -> Navigator -> Navigator
+mouseTo to navigator =
+    case navigator.mouseAction of
+        Just action ->
+            case action of
+                Move from ->
+                    moveFromMouse from to navigator
+
+                Rotate from ->
+                    navigator
+
+        Nothing ->
+            navigator
+
+
+endAllMouseAction : Navigator -> Navigator
+endAllMouseAction navigator =
+    { navigator | mouseAction = Nothing }
+
+
+moveFromMouse : Vec2 -> Vec2 -> Navigator -> Navigator
+moveFromMouse from to navigator =
     case navigator.state of
         Orbit state ->
             let
+                relChange =
+                    relativeMouseMove from to navigator.resolution
+
+                azimuthChange =
+                    -2.0 * V2.getX relChange
+
+                elevationChange =
+                    -2.0 * V2.getY relChange
+
                 newState =
-                    { state | azimuth = playTime, elevation = playTime }
+                    { state
+                        | azimuth = state.azimuth + azimuthChange
+                        , elevation = state.elevation + elevationChange
+                    }
 
                 ( eye, up ) =
                     eyeAndUpFromOrbitState newState
@@ -84,7 +129,7 @@ animate playTime navigator =
                 camera =
                     lookAt eye newState.origo up navigator.camera.focalLength
             in
-            { navigator | camera = camera, state = Orbit newState }
+            { navigator | camera = camera, state = Orbit newState, mouseAction = Just (Move to) }
 
 
 changeResolution : Vec2 -> Navigator -> Navigator

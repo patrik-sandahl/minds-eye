@@ -127,14 +127,9 @@ update msg model =
             )
 
         AnimateFrame delta ->
-            ( let
-                playTime =
-                    Debug.log ("playTime=" ++ String.fromFloat (model.playTime + delta)) model.playTime + delta
-              in
-              { model
+            ( { model
                 | latestFrameTimes = delta :: List.take 4 model.latestFrameTimes
-                , playTime = playTime
-                , navigator = Navigator.animate (playTime / 3000.0) model.navigator
+                , playTime = model.playTime + delta
               }
             , Cmd.none
             )
@@ -144,7 +139,19 @@ update msg model =
                 dbg =
                     Debug.log ("Down: x=" ++ String.fromFloat pageX ++ ", y=" ++ String.fromFloat pageY) 0
             in
-            ( { model | dragState = Dragging }
+            ( { model
+                | dragState = Dragging
+                , navigator =
+                    case button of
+                        Left ->
+                            Navigator.beginMouseMove (V2.vec2 pageX pageY) model.navigator
+
+                        Right ->
+                            Navigator.beginMouseRotate (V2.vec2 pageX pageY) model.navigator
+
+                        _ ->
+                            model.navigator
+              }
             , Cmd.none
             )
 
@@ -153,16 +160,21 @@ update msg model =
                 dbg =
                     Debug.log ("MoveTo: x=" ++ String.fromFloat pageX ++ ", y=" ++ String.fromFloat pageY) 0
             in
-            ( model
+            ( { model
+                | navigator = Navigator.mouseTo (V2.vec2 pageX pageY) model.navigator
+              }
             , Cmd.none
             )
 
-        MouseUp button ->
+        MouseUp _ ->
             let
                 dbg =
                     Debug.log "Up" 0
             in
-            ( { model | dragState = Static }
+            ( { model
+                | dragState = Static
+                , navigator = Navigator.endAllMouseAction model.navigator
+              }
             , Cmd.none
             )
 
@@ -195,7 +207,7 @@ subscriptions model =
             Sub.batch staticEvents
 
         Dragging ->
-            BrowserEvents.onMouseMove (Decode.map2 MouseMoveTo decodeMouseYPos decodeMouseXPos) :: staticEvents |> Sub.batch
+            BrowserEvents.onMouseMove (Decode.map2 MouseMoveTo decodeMouseXPos decodeMouseYPos) :: staticEvents |> Sub.batch
 
 
 decodeMouseButton : Decode.Decoder MouseButton
@@ -405,8 +417,8 @@ void main()
         float u = (dir.x / length(dir) + 1.0) * 0.5;
         float v = (dir.y / length(dir) + 1.0) * 0.5;
 
-        if (u > 0.48 && u < 0.52) color = vec3(1.0);
-        else if (v > 0.48 && v < 0.52) color = vec3(0.0);
+        if (u > 0.49 && u < 0.51) color = vec3(1.0);
+        else if (v > 0.49 && v < 0.51) color = vec3(0.0);
         else color = vec3(u, v, 0.0);
     }
 
