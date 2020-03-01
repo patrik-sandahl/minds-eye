@@ -209,7 +209,7 @@ rotateMatrixBy azimuth elevation mat =
             M44.makeRotate elevation <| V3.vec3 1.0 0.0 0.0
 
         rotMatrix =
-            M44.mul rotElevation rotAzimuth
+            M44.mul rotAzimuth rotElevation 
     in
     M44.mul mat rotMatrix
 
