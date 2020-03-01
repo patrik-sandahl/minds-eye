@@ -67,6 +67,8 @@ init _ =
                     , height = 5.0
                     , azimuth = 0.0
                     , elevation = 0.0
+                    , yaw = 0.0
+                    , pitch = 0.0
                     }
                 )
                 (V2.vec2 0.0 0.0)

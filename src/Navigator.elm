@@ -34,6 +34,8 @@ type alias OrbitState =
     , height : Float
     , azimuth : Float
     , elevation : Float
+    , yaw : Float
+    , pitch : Float
     }
 
 
@@ -60,11 +62,14 @@ init initialState initialResolution =
     case initialState of
         Orbit state ->
             let
-                ( eye, up ) =
-                    eyeAndUpFromOrbitState state
+                ( worldEye, worldUp ) =
+                    eyeAndWorldUpFromOrbitState state
+
+                ( camEye, at, camUp ) =
+                    lookAtFromEyeAndWorldUp worldEye state.origo worldUp state.yaw state.pitch
 
                 camera =
-                    lookAt eye state.origo up 1.0
+                    lookAt camEye at camUp 1.0
             in
             { resolution = initialResolution
             , camera = camera
@@ -92,7 +97,7 @@ mouseTo to navigator =
                     moveFromMouse from to navigator
 
                 Rotate from ->
-                    navigator
+                    rotateFromMouse from to navigator
 
         Nothing ->
             navigator
@@ -123,13 +128,48 @@ moveFromMouse from to navigator =
                         , elevation = state.elevation + elevationChange
                     }
 
-                ( eye, up ) =
-                    eyeAndUpFromOrbitState newState
+                ( worldEye, worldUp ) =
+                    eyeAndWorldUpFromOrbitState newState
+
+                ( camEye, at, camUp ) =
+                    lookAtFromEyeAndWorldUp worldEye newState.origo worldUp newState.yaw newState.pitch
 
                 camera =
-                    lookAt eye newState.origo up navigator.camera.focalLength
+                    lookAt camEye at camUp navigator.camera.focalLength
             in
             { navigator | camera = camera, state = Orbit newState, mouseAction = Just (Move to) }
+
+
+rotateFromMouse : Vec2 -> Vec2 -> Navigator -> Navigator
+rotateFromMouse from to navigator =
+    case navigator.state of
+        Orbit state ->
+            let
+                relChange =
+                    relativeMouseMove from to navigator.resolution
+
+                yawChange =
+                    2.0 * V2.getX relChange
+
+                pitchChange =
+                    2.0 * V2.getY relChange
+
+                newState =
+                    { state
+                        | yaw = state.yaw + yawChange
+                        , pitch = state.pitch + pitchChange
+                    }
+
+                ( worldEye, worldUp ) =
+                    eyeAndWorldUpFromOrbitState newState
+
+                ( camEye, at, camUp ) =
+                    lookAtFromEyeAndWorldUp worldEye newState.origo worldUp newState.yaw newState.pitch
+
+                camera =
+                    lookAt camEye at camUp navigator.camera.focalLength
+            in
+            { navigator | camera = camera, state = Orbit newState, mouseAction = Just (Rotate to) }
 
 
 changeResolution : Vec2 -> Navigator -> Navigator
@@ -162,8 +202,29 @@ cameraFocalLength navigator =
     navigator.camera.focalLength
 
 
-eyeAndUpFromOrbitState : OrbitState -> ( Vec3, Vec3 )
-eyeAndUpFromOrbitState state =
+lookAtFromEyeAndWorldUp : Vec3 -> Vec3 -> Vec3 -> Float -> Float -> ( Vec3, Vec3, Vec3 )
+lookAtFromEyeAndWorldUp eye origo up yaw pitch =
+    let
+        forward =
+            V3.sub origo eye
+                |> V3.normalize
+
+        nup =
+            V3.normalize up
+
+        right =
+            V3.cross forward nup
+
+        ( xAxis, yAxis, zAxis ) =
+            M44.makeBasis right nup forward
+                |> rotateMatrixBy yaw pitch
+                |> getMatrixAxis
+    in
+    ( eye, V3.normalize zAxis, yAxis )
+
+
+eyeAndWorldUpFromOrbitState : OrbitState -> ( Vec3, Vec3 )
+eyeAndWorldUpFromOrbitState state =
     let
         ( xAxis, yAxis, zAxis ) =
             bodyBasisMatrix
@@ -209,7 +270,7 @@ rotateMatrixBy azimuth elevation mat =
             M44.makeRotate elevation <| V3.vec3 1.0 0.0 0.0
 
         rotMatrix =
-            M44.mul rotAzimuth rotElevation 
+            M44.mul rotAzimuth rotElevation
     in
     M44.mul mat rotMatrix
 
