@@ -8,7 +8,7 @@ import Html.Attributes as HtmlAttributes
 import Json.Decode as Decode
 import Math.Vector2 as V2 exposing (Vec2)
 import Math.Vector3 as V3 exposing (Vec3)
-import Navigator exposing (NavigationState(..), Navigator, OrbitState)
+import ProtoNavigator exposing (NavigationState(..), OrbitState, ProtoNavigator)
 import Task
 import WebGL exposing (Mesh, Shader)
 
@@ -23,7 +23,7 @@ type alias Model =
     , latestFrameTimes : List Float
     , playTime : Float
     , dragState : DragState
-    , navigator : Navigator
+    , navigator : ProtoNavigator
     , quadMesh : Mesh Vertex
     }
 
@@ -61,7 +61,7 @@ init _ =
       , playTime = 0.0
       , dragState = Static
       , navigator =
-            Navigator.init
+            ProtoNavigator.init
                 (Orbit
                     { origo = V3.vec3 0.0 0.0 0.0
                     , height = 5.0
@@ -107,11 +107,11 @@ view model =
                 , playTime = model.playTime
                 , planetOrigo = V3.vec3 0.0 0.0 0.0
                 , planetRadius = 1.0
-                , cameraEye = Navigator.cameraEye model.navigator
-                , cameraForward = Navigator.cameraForward model.navigator
-                , cameraRight = Navigator.cameraRight model.navigator
-                , cameraUp = Navigator.cameraUp model.navigator
-                , cameraFocalLength = Navigator.cameraFocalLength model.navigator
+                , cameraEye = ProtoNavigator.cameraEye model.navigator
+                , cameraForward = ProtoNavigator.cameraForward model.navigator
+                , cameraRight = ProtoNavigator.cameraRight model.navigator
+                , cameraUp = ProtoNavigator.cameraUp model.navigator
+                , cameraFocalLength = ProtoNavigator.cameraFocalLength model.navigator
                 }
             ]
         ]
@@ -123,7 +123,7 @@ update msg model =
         ChangeResolution resolution ->
             ( { model
                 | resolution = resolution
-                , navigator = Navigator.changeResolution resolution model.navigator
+                , navigator = ProtoNavigator.changeResolution resolution model.navigator
               }
             , Cmd.none
             )
@@ -146,10 +146,10 @@ update msg model =
                 , navigator =
                     case button of
                         Left ->
-                            Navigator.beginMouseMove (V2.vec2 pageX pageY) model.navigator
+                            ProtoNavigator.beginMouseMove (V2.vec2 pageX pageY) model.navigator
 
                         Right ->
-                            Navigator.beginMouseRotate (V2.vec2 pageX pageY) model.navigator
+                            ProtoNavigator.beginMouseRotate (V2.vec2 pageX pageY) model.navigator
 
                         _ ->
                             model.navigator
@@ -163,7 +163,7 @@ update msg model =
                     Debug.log ("MoveTo: x=" ++ String.fromFloat pageX ++ ", y=" ++ String.fromFloat pageY) 0
             in
             ( { model
-                | navigator = Navigator.mouseTo (V2.vec2 pageX pageY) model.navigator
+                | navigator = ProtoNavigator.mouseTo (V2.vec2 pageX pageY) model.navigator
               }
             , Cmd.none
             )
@@ -175,7 +175,7 @@ update msg model =
             in
             ( { model
                 | dragState = Static
-                , navigator = Navigator.endAllMouseAction model.navigator
+                , navigator = ProtoNavigator.endAllMouseAction model.navigator
               }
             , Cmd.none
             )
@@ -276,7 +276,7 @@ viewHud model =
                 String.fromInt (calcFps model.latestFrameTimes |> round) ++ " FPS"
 
             eye =
-                Navigator.cameraEye model.navigator
+                ProtoNavigator.cameraEye model.navigator
 
             eyePos =
                 "Eye x="

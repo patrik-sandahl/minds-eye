@@ -1,8 +1,8 @@
-module Navigator exposing
+module ProtoNavigator exposing
     ( Camera
     , NavigationState(..)
-    , Navigator
     , OrbitState
+    , ProtoNavigator
     , beginMouseMove
     , beginMouseRotate
     , cameraEye
@@ -21,7 +21,7 @@ import Math.Vector2 as V2 exposing (Vec2)
 import Math.Vector3 as V3 exposing (Vec3)
 
 
-type alias Navigator =
+type alias ProtoNavigator =
     { resolution : Vec2
     , camera : Camera
     , state : NavigationState
@@ -57,7 +57,7 @@ type alias Camera =
     }
 
 
-init : NavigationState -> Vec2 -> Navigator
+init : NavigationState -> Vec2 -> ProtoNavigator
 init initialState initialResolution =
     case initialState of
         Orbit state ->
@@ -78,17 +78,17 @@ init initialState initialResolution =
             }
 
 
-beginMouseMove : Vec2 -> Navigator -> Navigator
+beginMouseMove : Vec2 -> ProtoNavigator -> ProtoNavigator
 beginMouseMove pos navigator =
     { navigator | mouseAction = Just (Move pos) }
 
 
-beginMouseRotate : Vec2 -> Navigator -> Navigator
+beginMouseRotate : Vec2 -> ProtoNavigator -> ProtoNavigator
 beginMouseRotate pos navigator =
     { navigator | mouseAction = Just (Rotate pos) }
 
 
-mouseTo : Vec2 -> Navigator -> Navigator
+mouseTo : Vec2 -> ProtoNavigator -> ProtoNavigator
 mouseTo to navigator =
     case navigator.mouseAction of
         Just action ->
@@ -103,12 +103,12 @@ mouseTo to navigator =
             navigator
 
 
-endAllMouseAction : Navigator -> Navigator
+endAllMouseAction : ProtoNavigator -> ProtoNavigator
 endAllMouseAction navigator =
     { navigator | mouseAction = Nothing }
 
 
-moveFromMouse : Vec2 -> Vec2 -> Navigator -> Navigator
+moveFromMouse : Vec2 -> Vec2 -> ProtoNavigator -> ProtoNavigator
 moveFromMouse from to navigator =
     case navigator.state of
         Orbit state ->
@@ -140,7 +140,7 @@ moveFromMouse from to navigator =
             { navigator | camera = camera, state = Orbit newState, mouseAction = Just (Move to) }
 
 
-rotateFromMouse : Vec2 -> Vec2 -> Navigator -> Navigator
+rotateFromMouse : Vec2 -> Vec2 -> ProtoNavigator -> ProtoNavigator
 rotateFromMouse from to navigator =
     case navigator.state of
         Orbit state ->
@@ -172,32 +172,32 @@ rotateFromMouse from to navigator =
             { navigator | camera = camera, state = Orbit newState, mouseAction = Just (Rotate to) }
 
 
-changeResolution : Vec2 -> Navigator -> Navigator
+changeResolution : Vec2 -> ProtoNavigator -> ProtoNavigator
 changeResolution resolution navigator =
     { navigator | resolution = resolution }
 
 
-cameraEye : Navigator -> Vec3
+cameraEye : ProtoNavigator -> Vec3
 cameraEye navigator =
     navigator.camera.eye
 
 
-cameraForward : Navigator -> Vec3
+cameraForward : ProtoNavigator -> Vec3
 cameraForward navigator =
     navigator.camera.forward
 
 
-cameraRight : Navigator -> Vec3
+cameraRight : ProtoNavigator -> Vec3
 cameraRight navigator =
     navigator.camera.right
 
 
-cameraUp : Navigator -> Vec3
+cameraUp : ProtoNavigator -> Vec3
 cameraUp navigator =
     navigator.camera.up
 
 
-cameraFocalLength : Navigator -> Float
+cameraFocalLength : ProtoNavigator -> Float
 cameraFocalLength navigator =
     navigator.camera.focalLength
 
