@@ -10,6 +10,7 @@ import Math.Vector2 as V2 exposing (Vec2)
 import Math.Vector3 as V3 exposing (Vec3)
 import ProtoNavigator exposing (NavigationState(..), OrbitState, ProtoNavigator)
 import Task
+import Viewport exposing (Viewport)
 import WebGL exposing (Mesh, Shader)
 
 
@@ -19,7 +20,7 @@ type DragState
 
 
 type alias Model =
-    { resolution : Vec2
+    { viewport : Viewport
     , latestFrameTimes : List Float
     , playTime : Float
     , dragState : DragState
@@ -36,7 +37,7 @@ type MouseButton
 
 
 type Msg
-    = ChangeResolution Vec2
+    = ChangeViewport Viewport
     | AnimateFrame Float
     | MouseDown MouseButton Float Float
     | MouseMoveTo Float Float
@@ -56,7 +57,7 @@ main =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { resolution = V2.vec2 0.0 0.0
+    ( { viewport = Viewport.init 0 0
       , latestFrameTimes = []
       , playTime = 0.0
       , dragState = Static
@@ -82,7 +83,7 @@ fetchResolution : Cmd Msg
 fetchResolution =
     Task.perform
         (\viewport ->
-            ChangeResolution <| V2.vec2 viewport.viewport.width viewport.viewport.height
+            Viewport.init viewport.viewport.width viewport.viewport.height |> ChangeViewport
         )
         Dom.getViewport
 
@@ -95,15 +96,15 @@ view model =
         , WebGL.toHtmlWith
             [ WebGL.antialias
             ]
-            [ V2.getX model.resolution |> HtmlAttributes.width << floor
-            , V2.getY model.resolution |> HtmlAttributes.height << floor
+            [ model.viewport.width |> HtmlAttributes.width << floor
+            , model.viewport.height |> HtmlAttributes.height << floor
             , HtmlAttributes.style "display" "block"
             ]
             [ WebGL.entity
                 quadVertexShader
                 playgroundFragmentShader
                 model.quadMesh
-                { resolution = model.resolution
+                { resolution = Viewport.resolution model.viewport
                 , playTime = model.playTime
                 , planetOrigo = V3.vec3 0.0 0.0 0.0
                 , planetRadius = 1.0
@@ -120,10 +121,10 @@ view model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ChangeResolution resolution ->
+        ChangeViewport viewport ->
             ( { model
-                | resolution = resolution
-                , navigator = ProtoNavigator.changeResolution resolution model.navigator
+                | viewport = viewport
+                , navigator = ProtoNavigator.changeResolution (Viewport.resolution viewport) model.navigator
               }
             , Cmd.none
             )
@@ -190,7 +191,11 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     let
         staticEvents =
-            [ BrowserEvents.onResize (\w h -> ChangeResolution <| V2.vec2 (toFloat w) (toFloat h))
+            [ BrowserEvents.onResize
+                (\w h ->
+                    Viewport.init (toFloat w) (toFloat h)
+                        |> ChangeViewport
+                )
             , BrowserEvents.onAnimationFrameDelta AnimateFrame
             , BrowserEvents.onMouseDown (Decode.map3 MouseDown decodeMouseButton decodeMouseXPos decodeMouseYPos)
             , BrowserEvents.onMouseUp (Decode.map MouseUp decodeMouseButton)
@@ -270,7 +275,7 @@ viewHud model =
         ]
         [ let
             res =
-                String.fromFloat (V2.getX model.resolution) ++ "x" ++ String.fromFloat (V2.getY model.resolution) ++ "px"
+                String.fromFloat model.viewport.width ++ "x" ++ String.fromFloat model.viewport.height ++ "px"
 
             fps =
                 String.fromInt (calcFps model.latestFrameTimes |> round) ++ " FPS"
