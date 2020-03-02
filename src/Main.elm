@@ -3,6 +3,7 @@ module Main exposing (main)
 import Browser
 import Browser.Dom as Dom
 import Browser.Events as BrowserEvents
+import Camera
 import Cs
 import Html exposing (Html)
 import Html.Attributes as HtmlAttributes
