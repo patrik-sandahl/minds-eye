@@ -12,6 +12,7 @@ import Math.Vector2 as V2 exposing (Vec2)
 import Math.Vector3 as V3 exposing (Vec3)
 import ProtoNavigator exposing (NavigationState(..), OrbitState, ProtoNavigator)
 import Ray
+import Sphere
 import Task
 import Viewport exposing (Viewport)
 import WebGL exposing (Mesh, Shader)
