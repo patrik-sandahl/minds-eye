@@ -1,5 +1,6 @@
 module Cs exposing
-    ( toAxes
+    ( rotateWorld
+    , toAxes
     , worldAxes
     , worldXAxis
     , worldYAxis
@@ -59,3 +60,23 @@ toAxes mat =
             V3.vec3 r.m13 r.m23 r.m33
     in
     ( x, y, z )
+
+
+{-| Rotate the world matrix with the given azimuth and elevation radians.
+-}
+rotateWorld : Float -> Float -> Mat4 -> Mat4
+rotateWorld azimuth elevation mat =
+    let
+        ( _, y, z ) =
+            toAxes mat
+
+        azimuthRot =
+            M44.makeRotate azimuth y
+
+        elevationRot =
+            M44.makeRotate elevation z
+
+        rot =
+            M44.mul azimuthRot elevationRot
+    in
+    M44.mul mat rot

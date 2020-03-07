@@ -10,7 +10,7 @@ import Html.Attributes as HtmlAttributes
 import Json.Decode as Decode
 import Math.Vector2 as V2 exposing (Vec2)
 import Math.Vector3 as V3 exposing (Vec3)
-import Navigator exposing (Navigator, Mode (..))
+import Navigator exposing (Mode(..), Navigator)
 import Ray
 import Sphere exposing (Sphere)
 import Task
@@ -62,8 +62,11 @@ main =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    let planet = Sphere.init (V3.vec3 0.0 0.0 0.0) 1.0
-    in ( { viewport = Viewport.init 0 0
+    let
+        planet =
+            Sphere.init (V3.vec3 0.0 0.0 0.0) 1.0
+    in
+    ( { viewport = Viewport.init 0 0
       , latestFrameTimes = []
       , playTime = 0.0
       , dragState = Static
@@ -119,7 +122,7 @@ update msg model =
     case msg of
         ChangeViewport viewport ->
             ( { model
-                | viewport = viewport                
+                | viewport = viewport
               }
             , Cmd.none
             )
@@ -138,7 +141,7 @@ update msg model =
                     Debug.log ("Down: x=" ++ String.fromFloat pageX ++ ", y=" ++ String.fromFloat pageY) 0
             in
             ( { model
-                | dragState = Dragging                
+                | dragState = Dragging
               }
             , Cmd.none
             )
@@ -158,7 +161,7 @@ update msg model =
                     Debug.log "Up" 0
             in
             ( { model
-                | dragState = Static                
+                | dragState = Static
               }
             , Cmd.none
             )
