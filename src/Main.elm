@@ -10,6 +10,7 @@ import Html.Attributes as HtmlAttributes
 import Json.Decode as Decode
 import Math.Vector2 as V2 exposing (Vec2)
 import Math.Vector3 as V3 exposing (Vec3)
+import Navigator
 import ProtoNavigator exposing (NavigationState(..), OrbitState, ProtoNavigator)
 import Ray
 import Sphere

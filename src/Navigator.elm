@@ -2,9 +2,12 @@ module Navigator exposing
     ( Mode(..)
     , Navigator
     , init
+    , camera
     )
 
 import Camera exposing (Camera)
+import Cs
+import Math.Vector3 as V3
 import Sphere exposing (Sphere)
 
 
@@ -16,7 +19,9 @@ type Mode
 
 
 type alias Navigator =
-    { mode : Mode }
+    { mode : Mode
+    , camera : Camera
+    }
 
 
 {-| Initialize the navigator with its mode.
@@ -30,12 +35,34 @@ init mode =
         Surface sphere ->
             initSurface sphere
 
+{-| Get the camera -}
+camera : Navigator -> Camera
+camera navigator =
+    navigator.camera
 
+
+{-| The initial orbit orientation is along the positive x world axis,
+at looking to the center of the sphere.
+-}
 initOrbit : Sphere -> Navigator
 initOrbit sphere =
-    { mode = Orbit sphere }
+    let
+        eye =
+            V3.scale defaultOrbitHeightFactor Cs.worldXAxis 
+                |> V3.add sphere.origo
+    in
+    { mode = Orbit sphere
+    , camera = Camera.lookAt eye sphere.origo Cs.worldYAxis
+    }
+
+
+defaultOrbitHeightFactor : Float
+defaultOrbitHeightFactor =
+    5
 
 
 initSurface : Sphere -> Navigator
 initSurface sphere =
-    { mode = Surface sphere }
+    { mode = Surface sphere
+    , camera = Camera.lookAt (V3.vec3 0 0 0) (V3.vec3 0 0 0) (V3.vec3 0 0 0)
+    }
