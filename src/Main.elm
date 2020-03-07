@@ -10,8 +10,7 @@ import Html.Attributes as HtmlAttributes
 import Json.Decode as Decode
 import Math.Vector2 as V2 exposing (Vec2)
 import Math.Vector3 as V3 exposing (Vec3)
-import Navigator
-import ProtoNavigator exposing (NavigationState(..), OrbitState, ProtoNavigator)
+import Navigator exposing (Navigator, Mode (..))
 import Ray
 import Sphere
 import Task
@@ -29,7 +28,7 @@ type alias Model =
     , latestFrameTimes : List Float
     , playTime : Float
     , dragState : DragState
-    , navigator : ProtoNavigator
+    , navigator : Navigator
     , quadMesh : Mesh Vertex
     }
 
@@ -66,18 +65,7 @@ init _ =
       , latestFrameTimes = []
       , playTime = 0.0
       , dragState = Static
-      , navigator =
-            ProtoNavigator.init
-                (Orbit
-                    { origo = V3.vec3 0.0 0.0 0.0
-                    , height = 5.0
-                    , azimuth = 0.0
-                    , elevation = 0.0
-                    , yaw = 0.0
-                    , pitch = 0.0
-                    }
-                )
-                (V2.vec2 0.0 0.0)
+      , navigator = Navigator.init (Orbit (Sphere.init (V3.vec3 0.0 0.0 0.0) 1.0))
       , quadMesh = makeQuadMesh
       }
     , fetchResolution
@@ -113,11 +101,11 @@ view model =
                 , playTime = model.playTime
                 , planetOrigo = V3.vec3 0.0 0.0 0.0
                 , planetRadius = 1.0
-                , cameraEye = ProtoNavigator.cameraEye model.navigator
-                , cameraForward = ProtoNavigator.cameraForward model.navigator
-                , cameraRight = ProtoNavigator.cameraRight model.navigator
-                , cameraUp = ProtoNavigator.cameraUp model.navigator
-                , cameraFocalLength = ProtoNavigator.cameraFocalLength model.navigator
+                , cameraEye = model.navigator.camera.eye
+                , cameraForward = model.navigator.camera.forward
+                , cameraRight = model.navigator.camera.right
+                , cameraUp = model.navigator.camera.up
+                , cameraFocalLength = model.navigator.camera.focalLength
                 }
             ]
         ]
@@ -128,8 +116,7 @@ update msg model =
     case msg of
         ChangeViewport viewport ->
             ( { model
-                | viewport = viewport
-                , navigator = ProtoNavigator.changeResolution (Viewport.resolution viewport) model.navigator
+                | viewport = viewport                
               }
             , Cmd.none
             )
@@ -148,17 +135,7 @@ update msg model =
                     Debug.log ("Down: x=" ++ String.fromFloat pageX ++ ", y=" ++ String.fromFloat pageY) 0
             in
             ( { model
-                | dragState = Dragging
-                , navigator =
-                    case button of
-                        Left ->
-                            ProtoNavigator.beginMouseMove (V2.vec2 pageX pageY) model.navigator
-
-                        Right ->
-                            ProtoNavigator.beginMouseRotate (V2.vec2 pageX pageY) model.navigator
-
-                        _ ->
-                            model.navigator
+                | dragState = Dragging                
               }
             , Cmd.none
             )
@@ -168,9 +145,7 @@ update msg model =
                 dbg =
                     Debug.log ("MoveTo: x=" ++ String.fromFloat pageX ++ ", y=" ++ String.fromFloat pageY) 0
             in
-            ( { model
-                | navigator = ProtoNavigator.mouseTo (V2.vec2 pageX pageY) model.navigator
-              }
+            ( model
             , Cmd.none
             )
 
@@ -180,8 +155,7 @@ update msg model =
                     Debug.log "Up" 0
             in
             ( { model
-                | dragState = Static
-                , navigator = ProtoNavigator.endAllMouseAction model.navigator
+                | dragState = Static                
               }
             , Cmd.none
             )
@@ -286,7 +260,7 @@ viewHud model =
                 String.fromInt (calcFps model.latestFrameTimes |> round) ++ " FPS"
 
             eye =
-                ProtoNavigator.cameraEye model.navigator
+                model.navigator.camera.eye
 
             eyePos =
                 "Eye x="
