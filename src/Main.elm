@@ -12,7 +12,7 @@ import Math.Vector2 as V2 exposing (Vec2)
 import Math.Vector3 as V3 exposing (Vec3)
 import Navigator exposing (Navigator, Mode (..))
 import Ray
-import Sphere
+import Sphere exposing (Sphere)
 import Task
 import Viewport exposing (Viewport)
 import WebGL exposing (Mesh, Shader)
@@ -30,6 +30,7 @@ type alias Model =
     , dragState : DragState
     , navigator : Navigator
     , quadMesh : Mesh Vertex
+    , planet : Sphere
     }
 
 
@@ -61,12 +62,14 @@ main =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { viewport = Viewport.init 0 0
+    let planet = Sphere.init (V3.vec3 0.0 0.0 0.0) 1.0
+    in ( { viewport = Viewport.init 0 0
       , latestFrameTimes = []
       , playTime = 0.0
       , dragState = Static
-      , navigator = Navigator.init (Orbit (Sphere.init (V3.vec3 0.0 0.0 0.0) 1.0))
+      , navigator = Orbit planet |> Navigator.init
       , quadMesh = makeQuadMesh
+      , planet = planet
       }
     , fetchResolution
     )
@@ -99,8 +102,8 @@ view model =
                 model.quadMesh
                 { resolution = Viewport.resolution model.viewport
                 , playTime = model.playTime
-                , planetOrigo = V3.vec3 0.0 0.0 0.0
-                , planetRadius = 1.0
+                , planetOrigo = model.planet.origo
+                , planetRadius = model.planet.radius
                 , cameraEye = model.navigator.camera.eye
                 , cameraForward = model.navigator.camera.forward
                 , cameraRight = model.navigator.camera.right
@@ -382,7 +385,7 @@ float rayMarch(Ray ray)
         float d = intersectScene(p);
 
         d0 += d;
-        if (d < 0.001 || d0 > 10.0) break;
+        if (d < 0.001 || d0 > 30.0) break;
     }
 
     return d0;
@@ -397,7 +400,7 @@ void main()
     float d = rayMarch(ray);
 
     vec3 color = vec3(0.3);
-    if (d < 10.0) {
+    if (d < 30.0) {
         vec3 p = makePoint(ray, d);
         vec3 dir = p - planetOrigo;
         float u = (dir.x / length(dir) + 1.0) * 0.5;

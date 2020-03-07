@@ -48,7 +48,7 @@ initOrbit : Sphere -> Navigator
 initOrbit sphere =
     let
         eye =
-            V3.scale defaultOrbitHeightFactor Cs.worldXAxis 
+            V3.scale (defaultOrbitHeightFactor * sphere.radius) Cs.worldXAxis 
                 |> V3.add sphere.origo
     in
     { mode = Orbit sphere
