@@ -5,6 +5,7 @@ module Quaternion exposing
     , mul
     , rotate
     , toQuaternion
+    , zero
     )
 
 import Math.Vector3 as V3 exposing (Vec3)
@@ -14,6 +15,13 @@ import Math.Vector3 as V3 exposing (Vec3)
 -}
 type Quaternion
     = Quaternion Vec3 Float
+
+
+{-| A quaternion representing zero rotations.
+-}
+zero : Quaternion
+zero =
+    Quaternion (V3.vec3 0.0 0.0 0.0) 1.0
 
 
 {-| Rotate the radians theta about axis.

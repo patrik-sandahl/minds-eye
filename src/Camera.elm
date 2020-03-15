@@ -1,11 +1,12 @@
 module Camera exposing
     ( Camera
     , init
-    , lookAt
+    , rotate
     )
 
 import Cs
 import Math.Vector3 as V3 exposing (Vec3)
+import Quaternion exposing (Quaternion)
 
 
 {-| Representation of a camera.
@@ -31,21 +32,12 @@ init =
     }
 
 
-{-| Initialize the camera using look at. Focal length will
-always be initialized to 1.
+{-| Rotate the camera.
 -}
-lookAt : Vec3 -> Vec3 -> Vec3 -> Camera
-lookAt eye at up =
-    let
-        forward =
-            V3.sub at eye |> V3.normalize
-
-        right =
-            V3.cross forward up |> V3.normalize
-    in
-    { eye = eye
-    , forward = forward
-    , right = right
-    , up = V3.cross right forward
-    , focalLength = 1.0
+rotate : Quaternion -> Camera -> Camera
+rotate quat camera =
+    { camera
+        | forward = Quaternion.rotate quat camera.forward
+        , right = Quaternion.rotate quat camera.right
+        , up = Quaternion.rotate quat camera.up
     }

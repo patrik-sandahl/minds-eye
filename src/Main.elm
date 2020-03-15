@@ -131,6 +131,7 @@ update msg model =
             ( { model
                 | latestFrameTimes = delta :: List.take 4 model.latestFrameTimes
                 , playTime = model.playTime + delta
+                , navigator = Navigator.tick ((pi * 0.1) / 60) model.navigator
               }
             , Cmd.none
             )

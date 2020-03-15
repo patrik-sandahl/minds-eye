@@ -3,6 +3,7 @@ module Navigator exposing
     , Navigator
     , camera
     , init
+    , tick
     )
 
 import Camera exposing (Camera)
@@ -37,6 +38,21 @@ init mode =
             initSurface sphere
 
 
+tick : Float -> Navigator -> Navigator
+tick t navigator =
+    case navigator.mode of
+        Orbit sphere ->
+            let cam = navigator.camera
+                qUp = Quaternion.axisAngle cam.up t
+                cam2 = Camera.rotate qUp cam
+                qRight = Quaternion.axisAngle cam2.right t
+                cam3 = Camera.rotate qRight cam2
+                eye = V3.scale defaultOrbitHeightFactor (V3.negate cam3.forward)
+                        |> V3.add sphere.origo
+                cam4 = { cam3 | eye = eye }
+            in { navigator | camera = cam4 }
+        _            -> navigator
+
 {-| Get the camera
 -}
 camera : Navigator -> Camera
@@ -50,7 +66,9 @@ initOrbit sphere =
         cam =
             Camera.init
 
-        eye = V3.scale defaultOrbitHeightFactor (V3.negate cam.forward) |> V3.add sphere.origo
+        eye =
+            V3.scale defaultOrbitHeightFactor (V3.negate cam.forward)
+                |> V3.add sphere.origo
     in
     { mode = Orbit sphere
     , camera = { cam | eye = eye }
