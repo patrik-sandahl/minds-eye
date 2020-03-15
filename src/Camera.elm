@@ -1,8 +1,10 @@
 module Camera exposing
     ( Camera
+    , init
     , lookAt
     )
 
+import Cs
 import Math.Vector3 as V3 exposing (Vec3)
 
 
@@ -14,6 +16,18 @@ type alias Camera =
     , right : Vec3
     , up : Vec3
     , focalLength : Float
+    }
+
+
+{-| Initialize a camera at world origin, aligned with world axes.
+-}
+init : Camera
+init =
+    { eye = V3.vec3 0.0 0.0 0.0
+    , forward = Cs.worldXAxis
+    , right = Cs.worldZAxis
+    , up = Cs.worldYAxis
+    , focalLength = 1.0
     }
 
 

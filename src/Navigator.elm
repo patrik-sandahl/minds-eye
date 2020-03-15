@@ -7,8 +7,8 @@ module Navigator exposing
 
 import Camera exposing (Camera)
 import Cs
-import Math.Matrix4 as M44 exposing (Mat4)
 import Math.Vector3 as V3
+import Quaternion
 import Sphere exposing (Sphere)
 
 
@@ -22,9 +22,6 @@ type Mode
 type alias Navigator =
     { mode : Mode
     , camera : Camera
-    , relativeOrientationMat : Mat4
-    , azimuth : Float
-    , elevation : Float
     }
 
 
@@ -47,45 +44,26 @@ camera navigator =
     navigator.camera
 
 
-{-| The initial orbit orientation is along the positive x world axis,
-at looking to the center of the sphere.
--}
 initOrbit : Sphere -> Navigator
 initOrbit sphere =
     let
-        relativeOrientationMat =
-            Cs.rotateWorld 0.0 0.0 Cs.worldAxes
+        cam =
+            Camera.init
+
+        eye = V3.scale defaultOrbitHeightFactor (V3.negate cam.forward) |> V3.add sphere.origo
     in
     { mode = Orbit sphere
-    , camera = orbitingCamera sphere defaultOrbitHeightFactor relativeOrientationMat
-    , relativeOrientationMat = relativeOrientationMat
-    , azimuth = 0.0
-    , elevation = 0.0
+    , camera = { cam | eye = eye }
     }
-
-
-orbitingCamera : Sphere -> Float -> Mat4 -> Camera
-orbitingCamera sphere heightFactor mat =
-    let
-        ( x, y, _ ) =
-            Cs.toAxes mat
-
-        eye =
-            V3.scale (heightFactor * sphere.radius) x |> V3.add sphere.origo
-    in
-    Camera.lookAt eye sphere.origo y
-
-
-defaultOrbitHeightFactor : Float
-defaultOrbitHeightFactor =
-    5
 
 
 initSurface : Sphere -> Navigator
 initSurface sphere =
     { mode = Surface sphere
-    , camera = Camera.lookAt (V3.vec3 0 0 0) (V3.vec3 0 0 0) (V3.vec3 0 0 0)
-    , relativeOrientationMat = Cs.worldAxes
-    , azimuth = 0.0
-    , elevation = 0.0
+    , camera = Camera.init
     }
+
+
+defaultOrbitHeightFactor : Float
+defaultOrbitHeightFactor =
+    5
