@@ -3,7 +3,7 @@ module Main exposing (main)
 import Browser
 import Browser.Dom as Dom
 import Browser.Events as BrowserEvents
-import Camera
+import Camera exposing (Camera)
 import Cs
 import Html exposing (Html)
 import Html.Attributes as HtmlAttributes
@@ -11,7 +11,7 @@ import Json.Decode as Decode
 import Math.Vector2 as V2 exposing (Vec2)
 import Math.Vector3 as V3 exposing (Vec3)
 import Navigator exposing (Mode(..), Navigator)
-import Ray
+import Ray exposing (Ray)
 import Sphere exposing (Sphere)
 import Task
 import Viewport exposing (Viewport)
@@ -36,8 +36,7 @@ type alias Model =
 
 type MouseButton
     = Left
-    | Mid
-    | Right
+    | Other
     | Any
 
 
@@ -136,7 +135,7 @@ update msg model =
             , Cmd.none
             )
 
-        MouseDown button pageX pageY ->
+        MouseDown Left pageX pageY ->
             let
                 dbg =
                     Debug.log ("Down: x=" ++ String.fromFloat pageX ++ ", y=" ++ String.fromFloat pageY) 0
@@ -145,6 +144,10 @@ update msg model =
                 | dragState = Dragging
               }
             , Cmd.none
+            )
+
+        MouseDown _ _ _ ->
+            ( model, Cmd.none
             )
 
         MouseMoveTo pageX pageY ->
@@ -211,11 +214,8 @@ decodeMouseButton =
                 0 ->
                     Left
 
-                1 ->
-                    Mid
-
                 _ ->
-                    Right
+                    Other                
         )
         (Decode.field "button" Decode.int)
 
@@ -246,6 +246,14 @@ calcFps latestFrameTimes =
     else
         0.0
 
+intersectPlanet : Vec2 -> Model -> Maybe Vec3
+intersectPlanet uv model = 
+    let ray = Camera.uvToRay uv model.navigator.camera
+        d = Sphere.intersect ray model.planet
+    in 
+        case d of
+            Just dd -> Ray.pointAt dd ray |> Just
+            Nothing -> Nothing
 
 viewHud : Model -> Html Msg
 viewHud model =

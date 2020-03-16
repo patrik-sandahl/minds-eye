@@ -2,11 +2,14 @@ module Camera exposing
     ( Camera
     , init
     , rotate
+    , uvToRay
     )
 
 import Cs
+import Math.Vector2 as V2 exposing (Vec2)
 import Math.Vector3 as V3 exposing (Vec3)
 import Quaternion exposing (Quaternion)
+import Ray exposing (Ray)
 
 
 {-| Representation of a camera.
@@ -41,3 +44,23 @@ rotate quat camera =
         , right = Quaternion.rotate quat camera.right
         , up = Quaternion.rotate quat camera.up
     }
+
+{-| Create a ray from the normalized UV coordinate. -}
+uvToRay : Vec2 -> Camera -> Ray
+uvToRay uv camera =
+    let
+        mid =
+            V3.scale camera.focalLength camera.forward
+                |> V3.add camera.eye
+
+        u =
+            V2.getX uv
+
+        v =
+            V2.getY uv
+
+        at =
+            V3.add (V3.scale u camera.right) (V3.scale v camera.up)
+                |> V3.add mid
+    in
+    Ray.init camera.eye at
