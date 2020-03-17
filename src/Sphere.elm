@@ -31,7 +31,7 @@ intersect : Ray -> Sphere -> Maybe Float
 intersect ray sphere =
     let
         e =
-            V3.sub ray.origin sphere.origo
+            V3.sub sphere.origo ray.origin
 
         rSq =
             sphere.radius * sphere.radius

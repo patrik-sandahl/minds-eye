@@ -130,28 +130,43 @@ update msg model =
             ( { model
                 | latestFrameTimes = delta :: List.take 4 model.latestFrameTimes
                 , playTime = model.playTime + delta
-                , navigator = Navigator.tick ((pi * 0.1) / 60) model.navigator
               }
             , Cmd.none
             )
 
         MouseDown Left pageX pageY ->
+            -- The drag state is only changed when left click starts within the sphere.
             let
+                uv =
+                    Debug.log "down uv: " <| Viewport.normalizedUV (V2.vec2 pageX pageY) model.viewport
+
+                ipos =
+                    Debug.log "ipos: " <| intersectPlanet uv model
+
                 dbg =
                     Debug.log ("Down: x=" ++ String.fromFloat pageX ++ ", y=" ++ String.fromFloat pageY) 0
             in
             ( { model
-                | dragState = Dragging
+                | dragState =
+                    case ipos of
+                        Just _ ->
+                            Dragging
+
+                        Nothing ->
+                            model.dragState
               }
             , Cmd.none
             )
 
         MouseDown _ _ _ ->
-            ( model, Cmd.none
+            ( model
+            , Cmd.none
             )
 
         MouseMoveTo pageX pageY ->
             let
+                uv =
+                    Debug.log "move uv: " <| Viewport.normalizedUV (V2.vec2 pageX pageY) model.viewport
                 dbg =
                     Debug.log ("MoveTo: x=" ++ String.fromFloat pageX ++ ", y=" ++ String.fromFloat pageY) 0
             in
@@ -215,7 +230,7 @@ decodeMouseButton =
                     Left
 
                 _ ->
-                    Other                
+                    Other
         )
         (Decode.field "button" Decode.int)
 
@@ -246,14 +261,23 @@ calcFps latestFrameTimes =
     else
         0.0
 
+
 intersectPlanet : Vec2 -> Model -> Maybe Vec3
-intersectPlanet uv model = 
-    let ray = Camera.uvToRay uv model.navigator.camera
-        d = Sphere.intersect ray model.planet
-    in 
-        case d of
-            Just dd -> Ray.pointAt dd ray |> Just
-            Nothing -> Nothing
+intersectPlanet uv model =
+    let
+        ray =
+            Camera.uvToRay uv model.navigator.camera
+
+        d =
+            Sphere.intersect ray model.planet
+    in
+    case d of
+        Just dd ->
+            Ray.pointAt dd ray |> Just
+
+        Nothing ->
+            Nothing
+
 
 viewHud : Model -> Html Msg
 viewHud model =

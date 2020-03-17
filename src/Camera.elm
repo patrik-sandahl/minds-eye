@@ -45,9 +45,13 @@ rotate quat camera =
         , up = Quaternion.rotate quat camera.up
     }
 
-{-| Create a ray from the normalized UV coordinate. -}
+
+{-| Create a ray from the normalized UV coordinate.
+-}
 uvToRay : Vec2 -> Camera -> Ray
 uvToRay uv camera =
+    -- The y axis must be flipped as the v direction is
+    -- opposite to y.
     let
         mid =
             V3.scale camera.focalLength camera.forward
@@ -60,7 +64,10 @@ uvToRay uv camera =
             V2.getY uv
 
         at =
-            V3.add (V3.scale u camera.right) (V3.scale v camera.up)
+            V3.add (V3.scale u camera.right) (V3.scale v camera.up |> V3.negate)
                 |> V3.add mid
+
+        dir =
+            V3.sub at camera.eye
     in
-    Ray.init camera.eye at
+    Ray.init camera.eye dir
