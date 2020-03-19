@@ -3,11 +3,13 @@ module Navigator exposing
     , Navigator
     , camera
     , init
-    , tick
+    , panningFrom
+    , panningTo
+    , stopNavigate
     )
 
 import Camera exposing (Camera)
-import Cs
+import Math.Vector2 as V2 exposing (Vec2)
 import Math.Vector3 as V3
 import Quaternion
 import Sphere exposing (Sphere)
@@ -23,6 +25,7 @@ type Mode
 type alias Navigator =
     { mode : Mode
     , camera : Camera
+    , navUv : Maybe Vec2
     }
 
 
@@ -38,37 +41,71 @@ init mode =
             initSurface sphere
 
 
-tick : Float -> Navigator -> Navigator
-tick t navigator =
-    case navigator.mode of
-        Orbit sphere ->
-            let
-                cam =
-                    navigator.camera
+{-| Initializing panning from the given uv coordinate.
+-}
+panningFrom : Vec2 -> Navigator -> Navigator
+panningFrom navFrom navigator =
+    { navigator | navUv = Just navFrom }
 
-                qUp =
-                    Quaternion.axisAngle cam.up t
 
-                cam2 =
-                    Camera.rotate qUp cam
+{-| Panning to the following uv coordinate.
+-}
+panningTo : Vec2 -> Navigator -> Navigator
+panningTo navTo navigator =
+    case navigator.navUv of
+        Just navFrom ->
+            case navigator.mode of
+                Orbit sphere ->
+                    panningToOrbit navFrom navTo sphere navigator
 
-                qRight =
-                    Quaternion.axisAngle cam2.right t
+                Surface sphere ->
+                    panningToSurface navFrom navTo sphere navigator
 
-                cam3 =
-                    Camera.rotate qRight cam2
-
-                eye =
-                    V3.scale defaultOrbitHeightFactor (V3.negate cam3.forward)
-                        |> V3.add sphere.origo
-
-                cam4 =
-                    { cam3 | eye = eye }
-            in
-            { navigator | camera = cam4 }
-
-        _ ->
+        Nothing ->
             navigator
+
+
+{-| Stop all navigation.
+-}
+stopNavigate : Navigator -> Navigator
+stopNavigate navigator =
+    { navigator | navUv = Nothing }
+
+
+panningToOrbit : Vec2 -> Vec2 -> Sphere -> Navigator -> Navigator
+panningToOrbit navFrom navTo sphere navigator =
+    let
+        delta =
+            V2.sub navFrom navTo
+
+        yawQ =
+            Quaternion.axisAngle navigator.camera.up (V2.getX delta)
+
+        yawCam =
+            Camera.rotate yawQ navigator.camera
+
+        pitchQ =
+            Quaternion.axisAngle yawCam.right (V2.getY delta)
+
+        pitchCam =
+            Camera.rotate pitchQ yawCam
+
+        eye =
+            V3.scale defaultOrbitHeightFactor (V3.negate pitchCam.forward)
+                |> V3.add sphere.origo
+
+        finalCam =
+            { pitchCam | eye = eye }
+    in
+    { navigator
+        | camera = finalCam
+        , navUv = Just navTo
+    }
+
+
+panningToSurface : Vec2 -> Vec2 -> Sphere -> Navigator -> Navigator
+panningToSurface navFrom navTo sphere navigator =
+    { navigator | navUv = Just navTo }
 
 
 {-| Get the camera
@@ -90,6 +127,7 @@ initOrbit sphere =
     in
     { mode = Orbit sphere
     , camera = { cam | eye = eye }
+    , navUv = Nothing
     }
 
 
@@ -97,6 +135,7 @@ initSurface : Sphere -> Navigator
 initSurface sphere =
     { mode = Surface sphere
     , camera = Camera.init
+    , navUv = Nothing
     }
 
 

@@ -138,22 +138,22 @@ update msg model =
             -- The drag state is only changed when left click starts within the sphere.
             let
                 uv =
-                    Debug.log "down uv: " <| Viewport.normalizedUV (V2.vec2 pageX pageY) model.viewport
+                    Viewport.normalizedUV (V2.vec2 pageX pageY) model.viewport
 
                 ipos =
-                    Debug.log "ipos: " <| intersectPlanet uv model
+                    intersectPlanet model uv
 
-                dbg =
-                    Debug.log ("Down: x=" ++ String.fromFloat pageX ++ ", y=" ++ String.fromFloat pageY) 0
-            in
-            ( { model
-                | dragState =
+                ( dragState, navigator ) =
                     case ipos of
                         Just _ ->
-                            Dragging
+                            ( Dragging, Navigator.panningFrom uv model.navigator )
 
                         Nothing ->
-                            model.dragState
+                            ( model.dragState, model.navigator )
+            in
+            ( { model
+                | dragState = dragState
+                , navigator = navigator
               }
             , Cmd.none
             )
@@ -166,21 +166,18 @@ update msg model =
         MouseMoveTo pageX pageY ->
             let
                 uv =
-                    Debug.log "move uv: " <| Viewport.normalizedUV (V2.vec2 pageX pageY) model.viewport
-                dbg =
-                    Debug.log ("MoveTo: x=" ++ String.fromFloat pageX ++ ", y=" ++ String.fromFloat pageY) 0
+                    Viewport.normalizedUV (V2.vec2 pageX pageY) model.viewport
             in
-            ( model
+            ( { model
+                | navigator = Navigator.panningTo uv model.navigator
+              }
             , Cmd.none
             )
 
         MouseUp _ ->
-            let
-                dbg =
-                    Debug.log "Up" 0
-            in
             ( { model
                 | dragState = Static
+                , navigator = Navigator.stopNavigate model.navigator
               }
             , Cmd.none
             )
@@ -262,8 +259,8 @@ calcFps latestFrameTimes =
         0.0
 
 
-intersectPlanet : Vec2 -> Model -> Maybe Vec3
-intersectPlanet uv model =
+intersectPlanet : Model -> Vec2 -> Maybe Vec3
+intersectPlanet model uv =
     let
         ray =
             Camera.uvToRay uv model.navigator.camera
