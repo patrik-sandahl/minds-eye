@@ -3,19 +3,18 @@ module Main exposing (main)
 import Browser
 import Browser.Dom as Dom
 import Browser.Events as BrowserEvents
-import Camera exposing (Camera)
-import Cs
+import Camera
 import Html exposing (Html)
 import Html.Attributes as HtmlAttributes
 import Json.Decode as Decode
 import Math.Vector2 as V2 exposing (Vec2)
 import Math.Vector3 as V3 exposing (Vec3)
 import Navigator exposing (Mode(..), Navigator)
-import Ray exposing (Ray)
+import Pipeline exposing (Pipe(..), Pipeline)
+import Ray
 import Sphere exposing (Sphere)
 import Task
 import Viewport exposing (Viewport)
-import WebGL exposing (Mesh, Shader)
 
 
 type DragState
@@ -29,7 +28,7 @@ type alias Model =
     , playTime : Float
     , dragState : DragState
     , navigator : Navigator
-    , quadMesh : Mesh Vertex
+    , pipeline : Pipeline
     , planet : Sphere
     }
 
@@ -70,7 +69,7 @@ init _ =
       , playTime = 0.0
       , dragState = Static
       , navigator = Orbit planet |> Navigator.init
-      , quadMesh = makeQuadMesh
+      , pipeline = Pipeline.init
       , planet = planet
       }
     , fetchResolution
@@ -91,28 +90,7 @@ view model =
     Html.div
         []
         [ viewHud model
-        , WebGL.toHtmlWith
-            [ WebGL.antialias
-            ]
-            [ model.viewport.width |> HtmlAttributes.width << floor
-            , model.viewport.height |> HtmlAttributes.height << floor
-            , HtmlAttributes.style "display" "block"
-            ]
-            [ WebGL.entity
-                quadVertexShader
-                playgroundFragmentShader
-                model.quadMesh
-                { resolution = Viewport.resolution model.viewport
-                , playTime = model.playTime
-                , planetOrigo = model.planet.origo
-                , planetRadius = model.planet.radius
-                , cameraEye = model.navigator.camera.eye
-                , cameraForward = model.navigator.camera.forward
-                , cameraRight = model.navigator.camera.right
-                , cameraUp = model.navigator.camera.up
-                , cameraFocalLength = model.navigator.camera.focalLength
-                }
-            ]
+        , Pipeline.view Dev0 model.viewport model.navigator.camera model.planet model.playTime model.pipeline
         ]
 
 
@@ -308,146 +286,3 @@ viewHud model =
           in
           res ++ " " ++ fps ++ " " ++ eyePos |> Html.text
         ]
-
-
-type alias Vertex =
-    { position : Vec3
-    }
-
-
-type alias Uniforms =
-    { resolution : Vec2
-    , playTime : Float
-    , planetOrigo : Vec3
-    , planetRadius : Float
-    , cameraEye : Vec3
-    , cameraForward : Vec3
-    , cameraRight : Vec3
-    , cameraUp : Vec3
-    , cameraFocalLength : Float
-    }
-
-
-makeQuadMesh : Mesh Vertex
-makeQuadMesh =
-    WebGL.triangleStrip
-        [ Vertex (V3.vec3 -1.0 1.0 0.0)
-        , Vertex (V3.vec3 -1.0 -1.0 0.0)
-        , Vertex (V3.vec3 1.0 1.0 0.0)
-        , Vertex (V3.vec3 1.0 -1.0 0.0)
-        ]
-
-
-quadVertexShader : Shader Vertex Uniforms {}
-quadVertexShader =
-    [glsl|
-
-precision highp float;
-
-attribute vec3 position;
-
-void main()
-{
-    gl_Position = vec4(position, 1.0);
-}
-
-    |]
-
-
-playgroundFragmentShader : Shader {} Uniforms {}
-playgroundFragmentShader =
-    [glsl|
-
-precision highp float;
-
-uniform vec2 resolution;
-uniform float playTime;
-
-uniform vec3 planetOrigo;
-uniform float planetRadius;
-
-uniform vec3 cameraEye;
-uniform vec3 cameraForward;
-uniform vec3 cameraRight;
-uniform vec3 cameraUp;
-uniform float cameraFocalLength;
-
-struct Ray {
-    vec3 origin;
-    vec3 direction;
-};
-
-Ray makeRay(vec3 origin, vec3 direction)
-{
-    return Ray(origin, normalize(direction));
-}
-
-vec3 makePoint(Ray ray, float d)
-{
-    return ray.origin + ray.direction * d;
-}
-
-Ray primaryRay(vec2 uv)
-{
-    vec3 center = cameraEye + cameraForward * cameraFocalLength;
-    vec3 spot = center + cameraRight * uv.x + cameraUp * uv.y;
-
-    return makeRay(cameraEye, spot - cameraEye);
-}
-
-vec2 normalizedUV()
-{
-    return (gl_FragCoord.xy - 0.5 * resolution) / min(resolution.x, resolution.y);
-}
-
-float sphere(vec3 pos, float radius)
-{
-    return length(pos) - radius;
-}
-
-float intersectScene(vec3 p)
-{
-    return sphere(p - planetOrigo, planetRadius);
-}
-
-float rayMarch(Ray ray)
-{
-    float d0 = 0.0;
-    for (int i = 0; i < 100; ++i) {
-        vec3 p = makePoint(ray, d0);
-        float d = intersectScene(p);
-
-        d0 += d;
-        if (d < 0.001 || d0 > 30.0) break;
-    }
-
-    return d0;
-}
-
-void main()
-{
-    //vec2 uv = fract(normalizedUV() * 10.0);
-    vec2 uv = normalizedUV();
-    Ray ray = primaryRay(uv);
-
-    float d = rayMarch(ray);
-
-    vec3 color = vec3(0.3);
-    if (d < 30.0) {
-        vec3 p = makePoint(ray, d);
-        vec3 dir = p - planetOrigo;
-        float u = (dir.x / length(dir) + 1.0) * 0.5;
-        float v = (dir.y / length(dir) + 1.0) * 0.5;
-
-        if (u > 0.49 && u < 0.51) color = vec3(1.0);
-        else if (v > 0.49 && v < 0.51) color = vec3(0.0);
-        else color = vec3(u, v, 0.0);
-    }
-
-    gl_FragColor = vec4(color, 1.0);
-
-    //gl_FragColor = vec4(uv.x, uv.y, 0.0, 1.0);
-    //gl_FragColor = vec4(ray.direction, 1.0);
-}
-
-    |]
