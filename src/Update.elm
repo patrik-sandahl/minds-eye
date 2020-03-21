@@ -4,7 +4,7 @@ module Update exposing
     )
 
 import Browser.Dom as Dom
-import Camera
+import Navigator.Camera as Camera
 import Data exposing (DragState(..), Model, MouseButton(..), Msg(..))
 import Math.Ray as Ray
 import Math.Sphere as Sphere

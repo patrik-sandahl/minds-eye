@@ -1,11 +1,11 @@
-module Camera exposing
+module Navigator.Camera exposing
     ( Camera
     , init
     , rotate
     , uvToRay
     )
 
-import Cs
+import Navigator.Cs as Cs
 import Math.Quaternion as Quaternion exposing (Quaternion)
 import Math.Ray as Ray exposing (Ray)
 import Math.Vector2 as V2 exposing (Vec2)

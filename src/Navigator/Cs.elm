@@ -1,4 +1,4 @@
-module Cs exposing
+module Navigator.Cs exposing
     ( worldXAxis
     , worldYAxis
     , worldZAxis

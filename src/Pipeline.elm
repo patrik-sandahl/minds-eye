@@ -5,7 +5,7 @@ module Pipeline exposing
     , view
     )
 
-import Camera exposing (Camera)
+import Navigator.Camera exposing (Camera)
 import Html exposing (Html)
 import Html.Attributes as Attr
 import Math.Sphere exposing (Sphere)

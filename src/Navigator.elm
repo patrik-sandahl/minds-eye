@@ -8,7 +8,7 @@ module Navigator exposing
     , stopNavigate
     )
 
-import Camera exposing (Camera)
+import Navigator.Camera as Camera exposing (Camera)
 import Math.Quaternion as Quaternion
 import Math.Sphere exposing (Sphere)
 import Math.Vector2 as V2 exposing (Vec2)
