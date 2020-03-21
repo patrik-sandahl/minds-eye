@@ -1,7 +1,7 @@
 module Subscriptions exposing (sub)
 
 import Browser.Events as Events
-import Data exposing (DragState(..), Model, MouseButton(..), Msg(..))
+import Data exposing (DragState(..), Model, MouseButton(..), Msg(..), Key (..))
 import Json.Decode as Decode
 import Viewport
 
@@ -20,6 +20,8 @@ sub model =
             , Events.onAnimationFrameDelta AnimateFrame
             , Events.onMouseDown (Decode.map3 MouseDown decodeMouseButton decodeMouseXPos decodeMouseYPos)
             , Events.onMouseUp (Decode.map MouseUp decodeMouseButton)
+            , Events.onKeyDown (Decode.map KeyDown decodeKey)
+            , Events.onKeyUp (Decode.map KeyUp decodeKey)
             , Events.onVisibilityChange
                 (\v ->
                     if v == Events.Hidden then
@@ -49,7 +51,7 @@ decodeMouseButton =
                     Left
 
                 _ ->
-                    Other
+                    OtherButton
         )
         (Decode.field "button" Decode.int)
 
@@ -62,3 +64,13 @@ decodeMouseXPos =
 decodeMouseYPos : Decode.Decoder Float
 decodeMouseYPos =
     Decode.field "pageY" Decode.float
+
+decodeKey : Decode.Decoder Key
+decodeKey =
+    Decode.map 
+        (\str ->
+            case str of
+                "Control" -> Control
+                "h" -> Hud
+                _ -> OtherKey
+        ) (Decode.field "key" Decode.string)

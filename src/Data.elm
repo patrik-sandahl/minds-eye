@@ -3,6 +3,7 @@ module Data exposing
     , Model
     , MouseButton(..)
     , Msg(..)
+    , Key (..)
     )
 
 import Math.Sphere exposing (Sphere)
@@ -28,6 +29,7 @@ type alias Model =
     , navigator : Navigator
     , pipeline : Pipeline
     , planet : Sphere
+    , showHud : Bool
     }
 
 
@@ -35,9 +37,14 @@ type alias Model =
 -}
 type MouseButton
     = Left
-    | Other
+    | OtherButton
     | Any
 
+{-| Key enumeration. -}
+type Key
+    = Control
+    | Hud
+    | OtherKey
 
 {-| Application message type.
 -}
@@ -47,4 +54,6 @@ type Msg
     | MouseDown MouseButton Float Float
     | MouseMoveTo Float Float
     | MouseUp MouseButton
+    | KeyDown Key
+    | KeyUp Key
     | Ignore

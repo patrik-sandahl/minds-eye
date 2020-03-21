@@ -5,7 +5,7 @@ module Update exposing
 
 import Browser.Dom as Dom
 import Navigator.Camera as Camera
-import Data exposing (DragState(..), Model, MouseButton(..), Msg(..))
+import Data exposing (DragState(..), Model, MouseButton(..), Msg(..), Key (..))
 import Math.Ray as Ray
 import Math.Sphere as Sphere
 import Math.Vector2 as V2 exposing (Vec2)
@@ -31,6 +31,7 @@ init _ =
       , navigator = Orbit planet |> Navigator.init
       , pipeline = Pipeline.init
       , planet = planet
+      , showHud = False
       }
     , fetchResolution
     )
@@ -103,6 +104,26 @@ update msg model =
               }
             , Cmd.none
             )
+
+        KeyDown Control ->
+            let foo = Debug.log "Control pressed" 0
+            in (model, Cmd.none)
+
+        KeyDown Hud ->
+            ( { model | showHud = not model.showHud }, Cmd.none)
+
+        KeyDown OtherKey ->
+            (model, Cmd.none)
+
+        KeyUp Control ->
+            let foo = Debug.log "Control released" 0
+            in (model, Cmd.none)
+
+        KeyUp Hud ->
+            ( model, Cmd.none)
+
+        KeyUp OtherKey ->
+            (model, Cmd.none)
 
         Ignore ->
             ( model
