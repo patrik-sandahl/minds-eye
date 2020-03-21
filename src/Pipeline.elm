@@ -8,11 +8,11 @@ module Pipeline exposing
 import Camera exposing (Camera)
 import Html exposing (Html)
 import Html.Attributes as Attr
+import Math.Sphere exposing (Sphere)
 import Math.Vector3 as V3
 import Pipeline.Data exposing (Vertex)
 import Pipeline.Dev0FragmentShader as Dev0FragmentShader
 import Pipeline.QuadVertexShader as QuadVertexShader
-import Sphere exposing (Sphere)
 import Viewport exposing (Viewport)
 import WebGL exposing (Mesh)
 

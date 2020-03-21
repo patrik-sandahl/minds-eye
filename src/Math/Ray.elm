@@ -1,4 +1,4 @@
-module Ray exposing
+module Math.Ray exposing
     ( Ray
     , init
     , pointAt

@@ -1,11 +1,11 @@
-module Sphere exposing
+module Math.Sphere exposing
     ( Sphere
     , init
     , intersect
     )
 
+import Math.Ray exposing (Ray)
 import Math.Vector3 as V3 exposing (Vec3)
-import Ray exposing (Ray)
 
 
 {-| A sphere represented with an origo and a radius.

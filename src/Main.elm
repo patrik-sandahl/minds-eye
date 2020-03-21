@@ -6,7 +6,9 @@ import Subscriptions
 import Update
 import View
 
-{-| Application main function. -}
+
+{-| Application main function.
+-}
 main : Program () Model Msg
 main =
     Browser.element

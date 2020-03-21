@@ -6,16 +6,18 @@ module Update exposing
 import Browser.Dom as Dom
 import Camera
 import Data exposing (DragState(..), Model, MouseButton(..), Msg(..))
+import Math.Ray as Ray
+import Math.Sphere as Sphere
 import Math.Vector2 as V2 exposing (Vec2)
 import Math.Vector3 as V3 exposing (Vec3)
 import Navigator exposing (Mode(..))
 import Pipeline
-import Ray
-import Sphere
 import Task
 import Viewport
 
-{-| Application init function. -}
+
+{-| Application init function.
+-}
 init : () -> ( Model, Cmd Msg )
 init _ =
     let
@@ -34,7 +36,8 @@ init _ =
     )
 
 
-{-| Application update function. -}
+{-| Application update function.
+-}
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -106,6 +109,7 @@ update msg model =
             , Cmd.none
             )
 
+
 fetchResolution : Cmd Msg
 fetchResolution =
     Task.perform
@@ -113,6 +117,7 @@ fetchResolution =
             Viewport.init viewport.viewport.width viewport.viewport.height |> ChangeViewport
         )
         Dom.getViewport
+
 
 intersectPlanet : Model -> Vec2 -> Maybe Vec3
 intersectPlanet model uv =

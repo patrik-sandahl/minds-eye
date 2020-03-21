@@ -6,10 +6,10 @@ module Camera exposing
     )
 
 import Cs
+import Math.Quaternion as Quaternion exposing (Quaternion)
+import Math.Ray as Ray exposing (Ray)
 import Math.Vector2 as V2 exposing (Vec2)
 import Math.Vector3 as V3 exposing (Vec3)
-import Quaternion exposing (Quaternion)
-import Ray exposing (Ray)
 
 
 {-| Representation of a camera.

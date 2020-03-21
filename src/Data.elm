@@ -5,9 +5,9 @@ module Data exposing
     , Msg(..)
     )
 
+import Math.Sphere exposing (Sphere)
 import Navigator exposing (Navigator)
 import Pipeline exposing (Pipeline)
-import Sphere exposing (Sphere)
 import Viewport exposing (Viewport)
 
 

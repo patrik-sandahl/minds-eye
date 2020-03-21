@@ -9,10 +9,10 @@ module Navigator exposing
     )
 
 import Camera exposing (Camera)
+import Math.Quaternion as Quaternion
+import Math.Sphere exposing (Sphere)
 import Math.Vector2 as V2 exposing (Vec2)
 import Math.Vector3 as V3
-import Quaternion
-import Sphere exposing (Sphere)
 
 
 {-| Navigator modes. There can be an orbiting mode, and a surface mode.

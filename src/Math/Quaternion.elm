@@ -1,4 +1,4 @@
-module Quaternion exposing
+module Math.Quaternion exposing
     ( Quaternion
     , axisAngle
     , conjugate
