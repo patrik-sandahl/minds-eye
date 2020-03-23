@@ -69,7 +69,7 @@ update msg model =
                 ( dragState, navigator ) =
                     case ipos of
                         Just _ ->
-                            ( Dragging, Navigator.panningFrom uv model.navigator )
+                            ( Dragging, Navigator.startNavigate uv model.navigator )
 
                         Nothing ->
                             ( model.dragState, model.navigator )
@@ -92,7 +92,7 @@ update msg model =
                     Viewport.normalizedUV (V2.vec2 pageX pageY) model.viewport
             in
             ( { model
-                | navigator = Navigator.panningTo uv model.navigator
+                | navigator = Navigator.moveTo uv model.navigator
               }
             , Cmd.none
             )
@@ -105,21 +105,21 @@ update msg model =
             , Cmd.none
             )
 
-        KeyDown Control ->
-            let foo = Debug.log "Control pressed" 0
+        KeyDown RotateKey ->
+            let foo = Debug.log "Control pressed (rotate)" 0
             in (model, Cmd.none)
 
-        KeyDown Hud ->
+        KeyDown HudToggleKey ->
             ( { model | showHud = not model.showHud }, Cmd.none)
 
         KeyDown OtherKey ->
             (model, Cmd.none)
 
-        KeyUp Control ->
-            let foo = Debug.log "Control released" 0
+        KeyUp RotateKey ->
+            let foo = Debug.log "Control released (rotate)" 0
             in (model, Cmd.none)
 
-        KeyUp Hud ->
+        KeyUp HudToggleKey ->
             ( model, Cmd.none)
 
         KeyUp OtherKey ->

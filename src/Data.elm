@@ -42,8 +42,8 @@ type MouseButton
 
 {-| Key enumeration. -}
 type Key
-    = Control
-    | Hud
+    = RotateKey
+    | HudToggleKey
     | OtherKey
 
 {-| Application message type.

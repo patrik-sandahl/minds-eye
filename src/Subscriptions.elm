@@ -70,7 +70,7 @@ decodeKey =
     Decode.map 
         (\str ->
             case str of
-                "Control" -> Control
-                "h" -> Hud
-                _ -> OtherKey
+                "Control" -> RotateKey
+                "h"       -> HudToggleKey
+                _         -> OtherKey
         ) (Decode.field "key" Decode.string)

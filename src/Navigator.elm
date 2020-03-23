@@ -3,8 +3,8 @@ module Navigator exposing
     , Navigator
     , camera
     , init
-    , panningFrom
-    , panningTo
+    , startNavigate
+    , moveTo
     , stopNavigate
     )
 
@@ -41,25 +41,25 @@ init mode =
             initSurface sphere
 
 
-{-| Initializing panning from the given uv coordinate.
+{-| Initializing navigation action from this uv.
 -}
-panningFrom : Vec2 -> Navigator -> Navigator
-panningFrom navFrom navigator =
+startNavigate : Vec2 -> Navigator -> Navigator
+startNavigate navFrom navigator =
     { navigator | navUv = Just navFrom }
 
 
-{-| Panning to the following uv coordinate.
+{-| Move the camera according to the new uv.
 -}
-panningTo : Vec2 -> Navigator -> Navigator
-panningTo navTo navigator =
+moveTo : Vec2 -> Navigator -> Navigator
+moveTo navTo navigator =
     case navigator.navUv of
         Just navFrom ->
             case navigator.mode of
                 Orbit sphere ->
-                    panningToOrbit navFrom navTo sphere navigator
+                    moveToOrbit navFrom navTo sphere navigator
 
                 Surface sphere ->
-                    panningToSurface navFrom navTo sphere navigator
+                    moveToSurface navFrom navTo sphere navigator
 
         Nothing ->
             navigator
@@ -72,8 +72,8 @@ stopNavigate navigator =
     { navigator | navUv = Nothing }
 
 
-panningToOrbit : Vec2 -> Vec2 -> Sphere -> Navigator -> Navigator
-panningToOrbit navFrom navTo sphere navigator =
+moveToOrbit : Vec2 -> Vec2 -> Sphere -> Navigator -> Navigator
+moveToOrbit navFrom navTo sphere navigator =
     let
         delta =
             V2.sub navFrom navTo
@@ -103,8 +103,8 @@ panningToOrbit navFrom navTo sphere navigator =
     }
 
 
-panningToSurface : Vec2 -> Vec2 -> Sphere -> Navigator -> Navigator
-panningToSurface navFrom navTo sphere navigator =
+moveToSurface : Vec2 -> Vec2 -> Sphere -> Navigator -> Navigator
+moveToSurface navFrom navTo sphere navigator =
     { navigator | navUv = Just navTo }
 
 
