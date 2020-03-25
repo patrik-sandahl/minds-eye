@@ -32,6 +32,7 @@ init _ =
       , pipeline = Pipeline.init
       , planet = planet
       , showHud = False
+      , rotating = False
       }
     , fetchResolution
     )
@@ -92,7 +93,12 @@ update msg model =
                     Viewport.normalizedUV (V2.vec2 pageX pageY) model.viewport
             in
             ( { model
-                | navigator = Navigator.moveTo uv model.navigator
+                | navigator =
+                    if model.rotating then
+                        Navigator.rotateTo uv model.navigator
+
+                    else
+                        Navigator.moveTo uv model.navigator
               }
             , Cmd.none
             )
@@ -106,11 +112,7 @@ update msg model =
             )
 
         KeyDown RotateKey ->
-            let
-                foo =
-                    Debug.log "Control pressed (rotate)" 0
-            in
-            ( model, Cmd.none )
+            ( { model | rotating = True }, Cmd.none )
 
         KeyDown HudToggleKey ->
             ( { model | showHud = not model.showHud }, Cmd.none )
@@ -119,11 +121,7 @@ update msg model =
             ( model, Cmd.none )
 
         KeyUp RotateKey ->
-            let
-                foo =
-                    Debug.log "Control released (rotate)" 0
-            in
-            ( model, Cmd.none )
+            ( { model | rotating = False }, Cmd.none )
 
         KeyUp HudToggleKey ->
             ( model, Cmd.none )

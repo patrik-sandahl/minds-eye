@@ -30,6 +30,7 @@ type alias Model =
     , pipeline : Pipeline
     , planet : Sphere
     , showHud : Bool
+    , rotating : Bool
     }
 
 

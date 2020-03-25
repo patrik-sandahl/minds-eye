@@ -30,6 +30,11 @@ type alias Navigator =
     }
 
 
+type RotateDirection
+    = Left
+    | Right
+
+
 {-| Initialize the navigator with its mode.
 -}
 init : Mode -> Navigator
@@ -133,12 +138,53 @@ moveToSurface navFrom navTo sphere navigator =
 
 rotateToOrbit : Vec2 -> Vec2 -> Sphere -> Navigator -> Navigator
 rotateToOrbit navFrom navTo sphere navigator =
-    { navigator | navUv = Just navTo }
+    let
+        roll =
+            case rotateDirection navFrom navTo of
+                Left ->
+                    V2.distance navFrom navTo |> negate
+
+                Right ->
+                    V2.distance navFrom navTo
+
+        inCamera =
+            navigator.camera
+
+        ( forward, up, right ) =
+            Quaternion.yawPitchRollAxes 0.0 0.0 roll ( inCamera.forward, inCamera.up, inCamera.right )
+
+        newCamera =
+            { inCamera
+                | forward = forward
+                , up = up
+                , right = right
+            }
+    in
+    { navigator
+        | camera = newCamera
+        , navUv = Just navTo
+    }
 
 
 rotateToSurface : Vec2 -> Vec2 -> Sphere -> Navigator -> Navigator
 rotateToSurface navFrom navTo sphere navigator =
     { navigator | navUv = Just navTo }
+
+
+rotateDirection : Vec2 -> Vec2 -> RotateDirection
+rotateDirection navFrom navTo =
+    let
+        fromAngle =
+            atan2 (V2.getX navFrom) (V2.getY navFrom)
+
+        toAngle =
+            atan2 (V2.getX navTo) (V2.getY navTo)
+    in
+    if fromAngle < toAngle then
+        Right
+
+    else
+        Left
 
 
 {-| Get the camera
