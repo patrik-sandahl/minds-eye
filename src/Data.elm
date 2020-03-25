@@ -1,9 +1,9 @@
 module Data exposing
     ( DragState(..)
+    , Key(..)
     , Model
     , MouseButton(..)
     , Msg(..)
-    , Key (..)
     )
 
 import Math.Sphere exposing (Sphere)
@@ -40,11 +40,14 @@ type MouseButton
     | OtherButton
     | Any
 
-{-| Key enumeration. -}
+
+{-| Key enumeration.
+-}
 type Key
     = RotateKey
     | HudToggleKey
     | OtherKey
+
 
 {-| Application message type.
 -}

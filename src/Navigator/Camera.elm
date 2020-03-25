@@ -5,11 +5,11 @@ module Navigator.Camera exposing
     , uvToRay
     )
 
-import Navigator.Cs as Cs
 import Math.Quaternion as Quaternion exposing (Quaternion)
 import Math.Ray as Ray exposing (Ray)
 import Math.Vector2 as V2 exposing (Vec2)
 import Math.Vector3 as V3 exposing (Vec3)
+import Navigator.Cs as Cs
 
 
 {-| Representation of a camera.
@@ -38,11 +38,15 @@ init =
 {-| Rotate the camera.
 -}
 rotate : Quaternion -> Camera -> Camera
-rotate quat camera =
+rotate q camera =
+    let
+        ( forward, up, right ) =
+            Quaternion.rotateAxes q ( camera.forward, camera.up, camera.right )
+    in
     { camera
-        | forward = Quaternion.rotate quat camera.forward
-        , right = Quaternion.rotate quat camera.right
-        , up = Quaternion.rotate quat camera.up
+        | forward = forward
+        , up = up
+        , right = right
     }
 
 

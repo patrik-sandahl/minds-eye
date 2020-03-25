@@ -5,11 +5,11 @@ module Pipeline exposing
     , view
     )
 
-import Navigator.Camera exposing (Camera)
 import Html exposing (Html)
 import Html.Attributes as Attr
 import Math.Sphere exposing (Sphere)
 import Math.Vector3 as V3
+import Navigator.Camera exposing (Camera)
 import Pipeline.Data exposing (Vertex)
 import Pipeline.Dev0FragmentShader as Dev0FragmentShader
 import Pipeline.QuadVertexShader as QuadVertexShader

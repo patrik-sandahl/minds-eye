@@ -1,7 +1,7 @@
 module Subscriptions exposing (sub)
 
 import Browser.Events as Events
-import Data exposing (DragState(..), Model, MouseButton(..), Msg(..), Key (..))
+import Data exposing (DragState(..), Key(..), Model, MouseButton(..), Msg(..))
 import Json.Decode as Decode
 import Viewport
 
@@ -65,12 +65,19 @@ decodeMouseYPos : Decode.Decoder Float
 decodeMouseYPos =
     Decode.field "pageY" Decode.float
 
+
 decodeKey : Decode.Decoder Key
 decodeKey =
-    Decode.map 
+    Decode.map
         (\str ->
             case str of
-                "Control" -> RotateKey
-                "h"       -> HudToggleKey
-                _         -> OtherKey
-        ) (Decode.field "key" Decode.string)
+                "Control" ->
+                    RotateKey
+
+                "h" ->
+                    HudToggleKey
+
+                _ ->
+                    OtherKey
+        )
+        (Decode.field "key" Decode.string)

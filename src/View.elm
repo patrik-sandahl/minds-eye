@@ -18,7 +18,6 @@ view model =
         ]
 
 
-
 viewHud : Model -> Html Msg
 viewHud model =
     Html.div
@@ -30,7 +29,12 @@ viewHud model =
         , Attr.style "font-size" "16px"
         , Attr.style "color" "white"
         , Attr.style "z-index" "1"
-        , Attr.style "visibility" <| if model.showHud then "visible" else "hidden"
+        , Attr.style "visibility" <|
+            if model.showHud then
+                "visible"
+
+            else
+                "hidden"
         ]
         [ let
             res =

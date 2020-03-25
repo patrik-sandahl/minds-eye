@@ -4,7 +4,9 @@ module Math.Quaternion exposing
     , conjugate
     , mul
     , rotate
+    , rotateAxes
     , toQuaternion
+    , yawPitchRollAxes
     , zero
     )
 
@@ -98,3 +100,36 @@ rotate q v =
             mul q <| mul vQ qC
     in
     vR
+
+
+{-| Rotate the axes forward, up and right using the quaternion.
+-}
+rotateAxes : Quaternion -> ( Vec3, Vec3, Vec3 ) -> ( Vec3, Vec3, Vec3 )
+rotateAxes q ( forward, up, right ) =
+    ( rotate q forward
+    , rotate q up
+    , rotate q right
+    )
+
+
+{-| Rotate the axes forward, up and right in order yaw, pitch and roll.
+-}
+yawPitchRollAxes : Float -> Float -> Float -> ( Vec3, Vec3, Vec3 ) -> ( Vec3, Vec3, Vec3 )
+yawPitchRollAxes yaw pitch roll ( forward, up, right ) =
+    let
+        qYaw =
+            axisAngle up yaw
+
+        ( forwardY, upY, rightY ) =
+            rotateAxes qYaw ( forward, up, right )
+
+        qPitch =
+            axisAngle rightY pitch
+
+        ( forwardP, upP, rightP ) =
+            rotateAxes qPitch ( forwardY, upY, rightY )
+
+        qRoll =
+            axisAngle forwardP roll
+    in
+    rotateAxes qRoll ( forwardP, upP, rightP )

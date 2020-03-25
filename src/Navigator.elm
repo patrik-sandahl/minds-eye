@@ -3,16 +3,17 @@ module Navigator exposing
     , Navigator
     , camera
     , init
-    , startNavigate
     , moveTo
+    , rotateTo
+    , startNavigate
     , stopNavigate
     )
 
-import Navigator.Camera as Camera exposing (Camera)
 import Math.Quaternion as Quaternion
 import Math.Sphere exposing (Sphere)
 import Math.Vector2 as V2 exposing (Vec2)
 import Math.Vector3 as V3
+import Navigator.Camera as Camera exposing (Camera)
 
 
 {-| Navigator modes. There can be an orbiting mode, and a surface mode.
@@ -65,6 +66,23 @@ moveTo navTo navigator =
             navigator
 
 
+{-| Rotate the camera according to the new uv.
+-}
+rotateTo : Vec2 -> Navigator -> Navigator
+rotateTo navTo navigator =
+    case navigator.navUv of
+        Just navFrom ->
+            case navigator.mode of
+                Orbit sphere ->
+                    rotateToOrbit navFrom navTo sphere navigator
+
+                Surface sphere ->
+                    rotateToSurface navFrom navTo sphere navigator
+
+        Nothing ->
+            navigator
+
+
 {-| Stop all navigation.
 -}
 stopNavigate : Navigator -> Navigator
@@ -75,36 +93,51 @@ stopNavigate navigator =
 moveToOrbit : Vec2 -> Vec2 -> Sphere -> Navigator -> Navigator
 moveToOrbit navFrom navTo sphere navigator =
     let
+        inCamera =
+            navigator.camera
+
         delta =
             V2.sub navFrom navTo
 
-        yawQ =
-            Quaternion.axisAngle navigator.camera.up (V2.getX delta)
+        yaw =
+            V2.getX delta
 
-        yawCam =
-            Camera.rotate yawQ navigator.camera
+        pitch =
+            V2.getY delta
 
-        pitchQ =
-            Quaternion.axisAngle yawCam.right (V2.getY delta)
-
-        pitchCam =
-            Camera.rotate pitchQ yawCam
+        ( forward, up, right ) =
+            Quaternion.yawPitchRollAxes yaw pitch 0.0 ( inCamera.forward, inCamera.up, inCamera.right )
 
         eye =
-            V3.scale defaultOrbitHeightFactor (V3.negate pitchCam.forward)
+            V3.scale defaultOrbitHeightFactor (V3.negate forward)
                 |> V3.add sphere.origo
 
-        finalCam =
-            { pitchCam | eye = eye }
+        newCamera =
+            { inCamera
+                | eye = eye
+                , forward = forward
+                , up = up
+                , right = right
+            }
     in
     { navigator
-        | camera = finalCam
+        | camera = newCamera
         , navUv = Just navTo
     }
 
 
 moveToSurface : Vec2 -> Vec2 -> Sphere -> Navigator -> Navigator
 moveToSurface navFrom navTo sphere navigator =
+    { navigator | navUv = Just navTo }
+
+
+rotateToOrbit : Vec2 -> Vec2 -> Sphere -> Navigator -> Navigator
+rotateToOrbit navFrom navTo sphere navigator =
+    { navigator | navUv = Just navTo }
+
+
+rotateToSurface : Vec2 -> Vec2 -> Sphere -> Navigator -> Navigator
+rotateToSurface navFrom navTo sphere navigator =
     { navigator | navUv = Just navTo }
 
 

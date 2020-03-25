@@ -4,13 +4,13 @@ module Update exposing
     )
 
 import Browser.Dom as Dom
-import Navigator.Camera as Camera
-import Data exposing (DragState(..), Model, MouseButton(..), Msg(..), Key (..))
+import Data exposing (DragState(..), Key(..), Model, MouseButton(..), Msg(..))
 import Math.Ray as Ray
 import Math.Sphere as Sphere
 import Math.Vector2 as V2 exposing (Vec2)
 import Math.Vector3 as V3 exposing (Vec3)
 import Navigator exposing (Mode(..))
+import Navigator.Camera as Camera
 import Pipeline
 import Task
 import Viewport
@@ -106,24 +106,30 @@ update msg model =
             )
 
         KeyDown RotateKey ->
-            let foo = Debug.log "Control pressed (rotate)" 0
-            in (model, Cmd.none)
+            let
+                foo =
+                    Debug.log "Control pressed (rotate)" 0
+            in
+            ( model, Cmd.none )
 
         KeyDown HudToggleKey ->
-            ( { model | showHud = not model.showHud }, Cmd.none)
+            ( { model | showHud = not model.showHud }, Cmd.none )
 
         KeyDown OtherKey ->
-            (model, Cmd.none)
+            ( model, Cmd.none )
 
         KeyUp RotateKey ->
-            let foo = Debug.log "Control released (rotate)" 0
-            in (model, Cmd.none)
+            let
+                foo =
+                    Debug.log "Control released (rotate)" 0
+            in
+            ( model, Cmd.none )
 
         KeyUp HudToggleKey ->
-            ( model, Cmd.none)
+            ( model, Cmd.none )
 
         KeyUp OtherKey ->
-            (model, Cmd.none)
+            ( model, Cmd.none )
 
         Ignore ->
             ( model
