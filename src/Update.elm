@@ -11,7 +11,7 @@ import Math.Vector2 as V2 exposing (Vec2)
 import Math.Vector3 as V3 exposing (Vec3)
 import Navigator exposing (Mode(..))
 import Navigator.Camera as Camera
-import Pipeline
+import Pipeline exposing (Pipe(..))
 import Task
 import Viewport
 
@@ -33,6 +33,7 @@ init _ =
       , planet = planet
       , showHud = False
       , rotating = False
+      , pipe = Dev0
       }
     , fetchResolution
     )
@@ -117,6 +118,12 @@ update msg model =
         KeyDown HudToggleKey ->
             ( { model | showHud = not model.showHud }, Cmd.none )
 
+        KeyDown ZeroKey ->
+            ( { model | pipe = Dev0 }, Cmd.none )
+
+        KeyDown OneKey ->
+            ( { model | pipe = Dev1 }, Cmd.none )
+
         KeyDown OtherKey ->
             ( model, Cmd.none )
 
@@ -124,6 +131,12 @@ update msg model =
             ( { model | rotating = False }, Cmd.none )
 
         KeyUp HudToggleKey ->
+            ( model, Cmd.none )
+
+        KeyUp ZeroKey ->
+            ( model, Cmd.none )
+
+        KeyUp OneKey ->
             ( model, Cmd.none )
 
         KeyUp OtherKey ->

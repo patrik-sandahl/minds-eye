@@ -8,7 +8,7 @@ module Data exposing
 
 import Math.Sphere exposing (Sphere)
 import Navigator exposing (Navigator)
-import Pipeline exposing (Pipeline)
+import Pipeline exposing (Pipe, Pipeline)
 import Viewport exposing (Viewport)
 
 
@@ -31,6 +31,7 @@ type alias Model =
     , planet : Sphere
     , showHud : Bool
     , rotating : Bool
+    , pipe : Pipe
     }
 
 
@@ -47,6 +48,8 @@ type MouseButton
 type Key
     = RotateKey
     | HudToggleKey
+    | ZeroKey
+    | OneKey
     | OtherKey
 
 

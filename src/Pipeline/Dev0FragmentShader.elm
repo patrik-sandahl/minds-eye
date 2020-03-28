@@ -4,6 +4,8 @@ import Pipeline.Data exposing (Uniforms)
 import WebGL exposing (Shader)
 
 
+{-| Dev0 pipeline fragment shader - for development of orbiting navigation.
+-}
 program : Shader {} Uniforms {}
 program =
     [glsl|

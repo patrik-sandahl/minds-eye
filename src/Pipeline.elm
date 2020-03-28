@@ -12,6 +12,7 @@ import Math.Vector3 as V3
 import Navigator.Camera exposing (Camera)
 import Pipeline.Data exposing (Vertex)
 import Pipeline.Dev0FragmentShader as Dev0FragmentShader
+import Pipeline.Dev1FragmentShader as Dev1FragmentShader
 import Pipeline.QuadVertexShader as QuadVertexShader
 import Viewport exposing (Viewport)
 import WebGL exposing (Mesh)
@@ -26,6 +27,7 @@ type alias Pipeline =
 
 type Pipe
     = Dev0
+    | Dev1
 
 
 {-| Initialize the pipeline.
@@ -45,6 +47,9 @@ view pipe viewport camera sphere playTime pipeline =
             case pipe of
                 Dev0 ->
                     Dev0FragmentShader.program
+
+                Dev1 ->
+                    Dev1FragmentShader.program
     in
     WebGL.toHtmlWith
         [ WebGL.antialias

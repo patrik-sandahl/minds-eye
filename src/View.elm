@@ -14,7 +14,7 @@ view model =
     Html.div
         []
         [ viewHud model
-        , Pipeline.view Dev0 model.viewport model.navigator.camera model.planet model.playTime model.pipeline
+        , Pipeline.view model.pipe model.viewport model.navigator.camera model.planet model.playTime model.pipeline
         ]
 
 
