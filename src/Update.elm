@@ -118,10 +118,10 @@ update msg model =
         KeyDown HudToggleKey ->
             ( { model | showHud = not model.showHud }, Cmd.none )
 
-        KeyDown ZeroKey ->
+        KeyDown Dev0Key ->
             ( { model | pipe = Dev0 }, Cmd.none )
 
-        KeyDown OneKey ->
+        KeyDown Dev1Key ->
             ( { model | pipe = Dev1 }, Cmd.none )
 
         KeyDown OtherKey ->
@@ -133,10 +133,10 @@ update msg model =
         KeyUp HudToggleKey ->
             ( model, Cmd.none )
 
-        KeyUp ZeroKey ->
+        KeyUp Dev0Key ->
             ( model, Cmd.none )
 
-        KeyUp OneKey ->
+        KeyUp Dev1Key ->
             ( model, Cmd.none )
 
         KeyUp OtherKey ->

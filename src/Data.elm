@@ -48,8 +48,8 @@ type MouseButton
 type Key
     = RotateKey
     | HudToggleKey
-    | ZeroKey
-    | OneKey
+    | Dev0Key
+    | Dev1Key
     | OtherKey
 
 

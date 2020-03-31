@@ -77,11 +77,11 @@ decodeKey =
                 "h" ->
                     HudToggleKey
 
-                "0" ->
-                    ZeroKey
-
                 "1" ->
-                    OneKey
+                    Dev0Key
+
+                "2" ->
+                    Dev1Key
 
                 _ ->
                     OtherKey
