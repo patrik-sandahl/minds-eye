@@ -28,27 +28,33 @@ const float FarDistance = 100.0;
 const float SurfaceDistance = 0.001;
 const vec3 LightSource = vec3(10.0, 0.0, 0.0);
 
-const float terrainScale = 0.5;
+const float terrainScale = 0.2;
 
 vec4 noised(vec3 x);
 
+// Make a TBN matrix kind of aligned with the world axes, i.e. if the normal
+// is pointing in the positive z direction the TBN will be equal to
+// world axes.
 mat3 makeTbn(vec3 pos)
-{
+{    
     vec3 normal = normalize(pos - planetOrigo);
-    vec3 tangent = cross(vec3(0.0, 1.0, 0.0), normal);
-    vec3 bitangent = cross(normal, tangent);
+    vec3 up = vec3(0.0, 1.0, 0.0);
+    vec3 tangent = normalize(cross(up, normal));
+    vec3 bitangent = normalize(cross(normal, tangent));
 
     return mat3(tangent, bitangent, normal);
 }
 
+// Create a normal from the derivatives. To make the normal be compatible
+// TBN rotations the normal must be aligned with the z axis.
 vec3 normFromDeriv(vec3 deriv)
-{
-    //vec3 tangent = vec3(1.0, deriv.x, 0.0);
-    //vec3 bitangent = vec3(0.0, deriv.z, 1.0);
+{   
+    vec3 tangent = vec3(1.0, 0.0, deriv.x);
+    vec3 bitangent = vec3(0.0, 1.0, deriv.z);
 
-    //return normalize(cross(bitangent, tangent));
+    return normalize(cross(tangent, bitangent));
 
-    return normalize(vec3(-deriv.x, 1.0, -deriv.z));
+    //return normalize(vec3(-deriv.x, 1.0, -deriv.z));
 }
 
 struct Ray {
@@ -121,26 +127,14 @@ void main()
         vec3 iPoint = makePoint(ray, v.x);
 
         mat3 tbn = makeTbn(iPoint);
-        vec3 normal = normFromDeriv(v.yzw);
+        vec3 deriv = v.yzw;
 
+        vec3 normal = tbn * normFromDeriv(deriv * terrainScale);
 
         vec3 lightDir = normalize(LightSource - iPoint);
         float diffuse = max(0.0, dot(normal, lightDir));
 
         color = vec3(diffuse);
-
-
-
-        //vec4 n = noised(iPoint);
-        //vec3 normal = normalize(iPoint - planetOrigo);
-        //vec3 normal = normalize(n.yzw);
-        //vec3 lightDir = normalize(LightSource - iPoint);
-
-        //float diffuse = max(0.0, dot(normal, lightDir));
-
-        //color = vec3((n.x + 1.0) * 0.5);
-        //color = normal;
-        //color = vec3(diffuse);
     }
 
     gl_FragColor = vec4(color, 1.0);
