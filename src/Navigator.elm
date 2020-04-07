@@ -220,4 +220,4 @@ initSurface sphere =
 
 defaultOrbitHeightFactor : Float
 defaultOrbitHeightFactor =
-    5
+    3

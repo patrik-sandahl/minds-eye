@@ -25,16 +25,24 @@ uniform vec3 cameraUp;
 uniform float cameraFocalLength;
 
 const float FarDistance = 100.0;
-const float SurfaceDistance = 0.001;
+const float SurfaceDistance = 0.0001;
 const vec3 LightSource = vec3(10.0, 0.0, 0.0);
 
-const float terrainScale = 0.2;
+const float terrainScale = 0.15;
+
+const mat3 m3  = mat3( 0.00,  0.80,  0.60,
+                      -0.80,  0.36, -0.48,
+                      -0.60, -0.48,  0.64 );
+const mat3 m3i = mat3( 0.00, -0.80, -0.60,
+                       0.80,  0.36, -0.48,
+                       0.60, -0.48,  0.64 );
 
 vec4 noised(vec3 x);
+vec4 fbmd(vec3 x);
 
 vec3 rotatingLightSource()
 {
-    return vec3(sin(playTime * 0.001) * 10.0, 0.0, cos(playTime * 0.001) * 10.0);
+    return vec3(sin(playTime * 0.0002) * 10.0, 0.0, cos(playTime * 0.0002) * 10.0);
 }
 
 // Make a TBN matrix kind of aligned with the world axes, i.e. if the normal
@@ -98,7 +106,7 @@ float sphere(vec3 pos, float radius)
 vec4 intersectScene(vec3 p)
 {
     vec3 pos = p - planetOrigo;
-    vec4 n = noised(pos);
+    vec4 n = fbmd(pos);
 
     n.x = sphere(p, planetRadius) + n.x * terrainScale;
 
@@ -184,6 +192,28 @@ vec4 noised(vec3 x)
                       2.0* du * vec3( k1 + k4*u.y + k6*u.z + k7*u.y*u.z,
                                       k2 + k5*u.z + k4*u.x + k7*u.z*u.x,
                                       k3 + k6*u.x + k5*u.y + k7*u.x*u.y ) );
+}
+
+vec4 fbmd(vec3 x)
+{
+    float f = 2.0;
+    float s = 0.5;
+    float a = 0.0;
+    float b = 0.5;
+    vec3  d = vec3(0.0);
+    mat3  m = mat3(1.0,0.0,0.0,
+                   0.0,1.0,0.0,
+                   0.0,0.0,1.0);
+    for( int i=0; i<8; i++ )
+    {
+        vec4 n = noised(x);
+        a += b*n.x;          // accumulate values		
+        d += b*m*n.yzw;      // accumulate derivatives
+        b *= s;
+        x = f*m3*x;
+        m = f*m3i*m;
+    }
+	return vec4( a, d );
 }
 
     |]
