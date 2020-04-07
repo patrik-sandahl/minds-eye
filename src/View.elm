@@ -53,8 +53,11 @@ viewHud model =
                     ++ (V3.getY eye |> String.fromFloat)
                     ++ ", z="
                     ++ (V3.getZ eye |> String.fromFloat)
+
+            playTime =
+                "PlayTime=" ++ (model.playTime |> String.fromFloat) ++ " ms"
           in
-          res ++ " " ++ fps ++ " " ++ eyePos |> Html.text
+          res ++ " " ++ fps ++ " " ++ eyePos ++ " " ++ playTime |> Html.text
         ]
 
 

@@ -32,6 +32,11 @@ const float terrainScale = 0.2;
 
 vec4 noised(vec3 x);
 
+vec3 rotatingLightSource()
+{
+    return vec3(sin(playTime * 0.001) * 10.0, 0.0, cos(playTime * 0.001) * 10.0);
+}
+
 // Make a TBN matrix kind of aligned with the world axes, i.e. if the normal
 // is pointing in the positive z direction the TBN will be equal to
 // world axes.
@@ -131,7 +136,7 @@ void main()
 
         vec3 normal = tbn * normFromDeriv(deriv * terrainScale);
 
-        vec3 lightDir = normalize(LightSource - iPoint);
+        vec3 lightDir = normalize(rotatingLightSource() - iPoint);
         float diffuse = max(0.0, dot(normal, lightDir));
 
         color = vec3(diffuse);
